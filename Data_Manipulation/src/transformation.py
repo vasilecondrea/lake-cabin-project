@@ -1,37 +1,12 @@
-import psycopg2
-import datetime
-import calendar
+import pandas as pd
+import io
 
-def connect_to_db(dbname, user, password, host, port):
-    conn = psycopg2.connect(dbname=dbname, user=user, password=password, host=host, port=port, sslmode='require')
-    return conn
-
-def extract_date(conn):
+def read_files_from_s3_bucket(s3, bucket, key):
     
-    print(dir(conn))
-    print(conn.status)
+    obj = s3.get_object(Bucket=bucket, Key=key)
+    df = pd.read_parquet(io.BytesIO(obj['Body'].read()))
+    return df
 
-    cursor = conn.cursor()
-
-    cursor.execute("SELECT * FROM sales_order;")
-
-    data = cursor.fetchone()
-
-    print(data[1])
-
-    #print(dir(datetime.datetime))
-
-    # date id
-    # year
-    print("YEAR:", data[1].year)
-    # month
-    print("MONTH:", data[1].month)
-    # day
-    print("DAY:", data[1].day)
-    # day of week
-    print("DAY OF WEEK:", data[1].weekday())
-    # day name
-    print("DAY NAME:", calendar.day_name[data[1].weekday()])
-    # month name
-
-    # quarter
+    # adding column to dataframe
+    addresses = ['New York', 'Paris']
+    df['Address'] = addresses

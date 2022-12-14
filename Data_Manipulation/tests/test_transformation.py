@@ -1,11 +1,29 @@
 from moto import mock_s3
 import boto3
-from Data_Manipulation.src.transformation import read_files_from_s3_bucket, create_dim_counterparty, create_dim_transaction, create_dim_payment_type, delete_cols_from_df, create_dim_currency, create_lookup_from_json
+from Data_Manipulation.src.transformation import read_csv_from_s3_bucket, convert_csv_to_parquet_data_frame, create_dim_counterparty, create_dim_transaction, create_dim_payment_type, delete_cols_from_df, create_dim_currency, create_lookup_from_json, create_dim_design
 import pandas as pd
+import filecmp
+import tempfile
 
 @mock_s3
-def test_read_from_parquet_file():
+def test_read_csv_from_s3_bucket():
 
+    file = "test_csv.csv"
+    bucket = "test_bucket"
+
+    s3 = boto3.client("s3")
+    s3.create_bucket(Bucket=bucket)
+    s3.upload_file(Filename=file, Bucket=bucket, Key=file)
+
+    result = read_csv_from_s3_bucket(s3, bucket, file)
+    
+    # pd.testing.assert_frame_equal(result, pd.read_csv(file))
+    filecmp.cmp(result.name, file)
+
+def test_convert_csv_to_parquet_data_frame():
+    
+    file = 'test_csv.csv'
+    
     df = pd.DataFrame({
         'sales_order_id': [1, 2],
         'created_at': ['2022-11-03 14:20:52.186', '2022-11-03 14:20:52.186'],
@@ -21,16 +39,8 @@ def test_read_from_parquet_file():
         'agreed_delivery_location_id': [4, 8]
     })
 
-    file = "test_parquet.parquet"
-    bucket = "test_bucket"
-
-    df.to_parquet(file)
-
-    s3 = boto3.client("s3")
-    s3.create_bucket(Bucket=bucket)
-    s3.upload_file(Filename=file, Bucket=bucket, Key=file)
-
-    result = read_files_from_s3_bucket(s3, bucket, file)
+    result = convert_csv_to_parquet_data_frame(pd.read_csv(file))
+    print(result)
 
     pd.testing.assert_frame_equal(result, df)
 
@@ -169,6 +179,27 @@ def test_modify_data_for_dim_currency():
 
     pd.testing.assert_frame_equal(result, dim_currency)
 
+def test_modify_data_for_dim_design():
+
+    design_df = pd.DataFrame({
+        'design_id': [1, 2],
+        'created_at': ['2022-11-03 14:20:49.962', ' 2022-11-03 14:20:49.962'],
+        'design_name': ['Wooden', 'Steel'],
+        'file_location': [' /home/user/dir', '/usr/ports'],
+        'file_name': ['wooden-20201128-jdvi.json', 'steel-20210621-13gb.json'],
+        'last_updated': ['2022-11-03 14:20:49.962', '2022-11-03 14:20:49.962']
+    })
+
+    dim_design = pd.DataFrame({
+        'design_id': [1, 2],
+        'design_name': ['Wooden', 'Steel'],
+        'file_location': [' /home/user/dir', '/usr/ports'],
+        'file_name': ['wooden-20201128-jdvi.json', 'steel-20210621-13gb.json']
+    })
+
+    result = create_dim_design(design_df)
+
+    pd.testing.assert_frame_equal(result, dim_design)
 
 # ensure that we can read the file in the landing zone bucket
 # convert the parquet file into readable python format

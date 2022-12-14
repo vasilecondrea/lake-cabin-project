@@ -1,16 +1,18 @@
 import pandas as pd
 import io
 import json
+import tempfile
 
-def read_files_from_s3_bucket(s3, bucket, key):
-    
-    obj = s3.get_object(Bucket=bucket, Key=key)
-    df = pd.read_parquet(io.BytesIO(obj['Body'].read()))
+def read_csv_from_s3_bucket(s3, bucket, key):
+    with tempfile.NamedTemporaryFile(delete=False) as f:
+        s3.download_file(Bucket=bucket, Key=key, Filename=f.name)
+        return f
+   
+def convert_csv_to_parquet_data_frame(file_str):
+    df = file_str
+    df.to_parquet('csv_to_parquet.parquet')
+    df = pd.read_parquet('csv_to_parquet.parquet')
     return df
-
-    # adding column to dataframe
-    addresses = ['New York', 'Paris']
-    df['Address'] = addresses
 
 def delete_cols_from_df(df, col_list):
     for col in col_list:
@@ -70,3 +72,11 @@ def create_dim_currency(currency_df, lookup):
     dim_currency['currency_name'] = currency_names
 
     return dim_currency
+
+def create_dim_design(design_df):
+    dim_design = design_df.copy()
+
+    cols_to_delete = ['created_at', 'last_updated']
+    dim_design = delete_cols_from_df(dim_design, cols_to_delete)
+
+    return dim_design

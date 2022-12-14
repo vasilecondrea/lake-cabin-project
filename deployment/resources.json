@@ -1,0 +1,4 @@
+{
+  "s3_read_write_policy": "arn_has_been_created",
+  "cloudwatch_log_policy": "arn_has_been_created"
+}

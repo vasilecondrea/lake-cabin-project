@@ -49,9 +49,16 @@ def create_dim_payment_type(payment_df):
 
     return dim_payment_type_df
 
+def create_lookup_from_json(json_file, key, value):
+    
+    with open(json_file) as f:
+        data = json.load(f)
+        lookup = {}
+        for element in data:
+            lookup[element[key]] = element[value] 
+    
+    return lookup
+
 def create_dim_currency(currency_df):
     
-    with open('currency-symbols.json') as f:
-        data = json.load(f)
-        for currency in currency_df['currency_code']:
-            pass
+    pass

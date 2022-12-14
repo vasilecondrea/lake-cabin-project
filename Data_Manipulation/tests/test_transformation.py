@@ -1,6 +1,6 @@
 from moto import mock_s3
 import boto3
-from Data_Manipulation.src.transformation import read_files_from_s3_bucket, create_dim_counterparty, create_dim_transaction, create_dim_payment_type
+from Data_Manipulation.src.transformation import read_files_from_s3_bucket, create_dim_counterparty, create_dim_transaction, create_dim_payment_type, delete_cols_from_df, create_dim_currency
 import pandas as pd
 
 @mock_s3
@@ -33,6 +33,21 @@ def test_read_from_parquet_file():
     result = read_files_from_s3_bucket(s3, bucket, file)
 
     pd.testing.assert_frame_equal(result, df)
+
+def test_delete_cols_from_df():
+    
+    test_df = pd.DataFrame({
+        'col_1': [1, 2],
+        'col_2': [1, 2]
+    })
+    
+    expected_df = pd.DataFrame({
+        'col_2': [1, 2]
+    })
+
+    result = delete_cols_from_df(test_df, ['col_1'])
+
+    pd.testing.assert_frame_equal(result, expected_df)
 
 def test_modify_data_for_dim_counterparty_table():
 
@@ -114,6 +129,26 @@ def test_modify_data_for_dim_payment_type():
     result = create_dim_payment_type(payment_type_df)
 
     pd.testing.assert_frame_equal(result, dim_payment_type)
+
+def test_modify_data_for_dim_currency():
+
+    currency_df = pd.DataFrame({
+        'currency_id': [1, 2],
+        'currency_code': ['GBP', 'USD'],
+        'created_at': ['2022-11-03 14:20:49.962', '2022-11-03 14:20:49.962'],
+        'last_updated': ['2022-11-03 14:20:49.962', '2022-11-03 14:20:49.962']
+    })
+
+    dim_currency = pd.DataFrame({
+        'currency_id': [1, 2],
+        'currency_code': ['GBP', 'USD'],
+        'currency_name': ['British Pound Sterling', 'United States Dollar']
+    })
+
+    result = create_dim_currency(currency_df)
+
+    pd.testing.assert_frame_equal(result, dim_currency)
+
 
 # ensure that we can read the file in the landing zone bucket
 # convert the parquet file into readable python format

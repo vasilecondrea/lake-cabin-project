@@ -8,11 +8,12 @@ def read_csv_from_s3_bucket(s3, bucket, key):
         s3.download_file(Bucket=bucket, Key=key, Filename=f.name)
         return f
    
-def convert_csv_to_parquet_data_frame(file_str):
-    df = file_str
-    df.to_parquet('csv_to_parquet.parquet')
-    df = pd.read_parquet('csv_to_parquet.parquet')
-    return df
+def convert_csv_to_parquet_data_frame(file):
+    with tempfile.NamedTemporaryFile(delete=False) as f:
+        df = pd.read_csv(file)
+        df.to_parquet(f.name)
+        df = pd.read_parquet(f.name)
+        return df
 
 def delete_cols_from_df(df, col_list):
     for col in col_list:

@@ -39,9 +39,9 @@ def test_convert_csv_to_parquet_data_frame():
         'agreed_delivery_location_id': [4, 8]
     })
 
-    result = convert_csv_to_parquet_data_frame(pd.read_csv(file))
-    print(result)
-
+    with open(file, 'r') as f:
+        result = convert_csv_to_parquet_data_frame(f)
+    
     pd.testing.assert_frame_equal(result, df)
 
 def test_delete_cols_from_df():

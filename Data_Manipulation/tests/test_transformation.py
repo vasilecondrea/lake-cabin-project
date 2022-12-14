@@ -153,15 +153,21 @@ def test_modify_data_for_dim_currency():
         'last_updated': ['2022-11-03 14:20:49.962', '2022-11-03 14:20:49.962']
     })
 
+    lookup = {
+        "GBP": "British Pound Sterling",
+        "ARS": "Argentina Peso",
+        "USD": "United States Dollar"
+    }
+
     dim_currency = pd.DataFrame({
         'currency_id': [1, 2],
         'currency_code': ['GBP', 'USD'],
         'currency_name': ['British Pound Sterling', 'United States Dollar']
     })
 
-    result = create_dim_currency(currency_df)
+    result = create_dim_currency(currency_df, lookup)
 
-    # pd.testing.assert_frame_equal(result, dim_currency)
+    pd.testing.assert_frame_equal(result, dim_currency)
 
 
 # ensure that we can read the file in the landing zone bucket

@@ -59,6 +59,14 @@ def create_lookup_from_json(json_file, key, value):
     
     return lookup
 
-def create_dim_currency(currency_df):
-    
-    pass
+def create_dim_currency(currency_df, lookup):
+    dim_currency = currency_df.copy()
+
+    cols_to_delete = ['created_at', 'last_updated']
+    dim_currency = delete_cols_from_df(dim_currency, cols_to_delete)
+
+    currency_names = [lookup[currency_code] for currency_code in dim_currency['currency_code']]
+
+    dim_currency['currency_name'] = currency_names
+
+    return dim_currency

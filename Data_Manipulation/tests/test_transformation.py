@@ -1,12 +1,11 @@
 from moto import mock_s3
 import boto3
-from Data_Manipulation.src.transformation import read_csv_from_s3_bucket, convert_csv_to_parquet_data_frame, create_dim_counterparty, create_dim_transaction, create_dim_payment_type, delete_cols_from_df, create_dim_currency, create_lookup_from_json, create_dim_design
+from Data_Manipulation.src.transformation import retrieve_csv_from_s3_bucket, convert_csv_to_parquet_data_frame, create_dim_counterparty, create_dim_transaction, create_dim_payment_type, delete_cols_from_df, create_dim_currency, create_lookup_from_json, create_dim_design
 import pandas as pd
 import filecmp
-import tempfile
 
 @mock_s3
-def test_read_csv_from_s3_bucket():
+def test_retrieve_csv_from_s3_bucket():
 
     file = "test_csv.csv"
     bucket = "test_bucket"
@@ -15,10 +14,10 @@ def test_read_csv_from_s3_bucket():
     s3.create_bucket(Bucket=bucket)
     s3.upload_file(Filename=file, Bucket=bucket, Key=file)
 
-    result = read_csv_from_s3_bucket(s3, bucket, file)
+    result = retrieve_csv_from_s3_bucket(s3, bucket, file)
     
-    # pd.testing.assert_frame_equal(result, pd.read_csv(file))
     filecmp.cmp(result.name, file)
+
 
 def test_convert_csv_to_parquet_data_frame():
     
@@ -44,6 +43,7 @@ def test_convert_csv_to_parquet_data_frame():
     
     pd.testing.assert_frame_equal(result, df)
 
+
 def test_delete_cols_from_df():
     
     test_df = pd.DataFrame({
@@ -58,6 +58,7 @@ def test_delete_cols_from_df():
     result = delete_cols_from_df(test_df, ['col_1'])
 
     pd.testing.assert_frame_equal(result, expected_df)
+
 
 def test_modify_data_for_dim_counterparty_table():
 
@@ -100,6 +101,7 @@ def test_modify_data_for_dim_counterparty_table():
 
     pd.testing.assert_frame_equal(result, dim_counterparty_df) 
 
+
 def test_modify_data_for_dim_transaction_table():
         
     transaction_df = pd.DataFrame({
@@ -122,6 +124,7 @@ def test_modify_data_for_dim_transaction_table():
 
     pd.testing.assert_frame_equal(result, dim_transaction_df)
 
+
 def test_modify_data_for_dim_payment_type():
 
     payment_type_df = pd.DataFrame({
@@ -140,6 +143,7 @@ def test_modify_data_for_dim_payment_type():
 
     pd.testing.assert_frame_equal(result, dim_payment_type)
 
+
 def test_create_lookup_from_json():
     
     test_json_file = 'lookup_test.json'
@@ -153,6 +157,7 @@ def test_create_lookup_from_json():
     result = create_lookup_from_json(test_json_file, 'abbreviation', 'currency')
 
     assert result == expected_lookup
+
 
 def test_modify_data_for_dim_currency():
 
@@ -179,6 +184,7 @@ def test_modify_data_for_dim_currency():
 
     pd.testing.assert_frame_equal(result, dim_currency)
 
+
 def test_modify_data_for_dim_design():
 
     design_df = pd.DataFrame({
@@ -200,6 +206,7 @@ def test_modify_data_for_dim_design():
     result = create_dim_design(design_df)
 
     pd.testing.assert_frame_equal(result, dim_design)
+
 
 # ensure that we can read the file in the landing zone bucket
 # convert the parquet file into readable python format

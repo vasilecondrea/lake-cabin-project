@@ -1,13 +1,13 @@
 import pandas as pd
-import io
 import json
 import tempfile
 
-def read_csv_from_s3_bucket(s3, bucket, key):
+def retrieve_csv_from_s3_bucket(s3, bucket, key):
     with tempfile.NamedTemporaryFile(delete=False) as f:
         s3.download_file(Bucket=bucket, Key=key, Filename=f.name)
         return f
-   
+
+
 def convert_csv_to_parquet_data_frame(file):
     with tempfile.NamedTemporaryFile(delete=False) as f:
         df = pd.read_csv(file)
@@ -15,11 +15,13 @@ def convert_csv_to_parquet_data_frame(file):
         df = pd.read_parquet(f.name)
         return df
 
+
 def delete_cols_from_df(df, col_list):
     for col in col_list:
         del df[col]
     return df
-    
+
+
 def create_dim_counterparty(counterparty_df, address_df=None):
     dim_counterparty_df = counterparty_df.copy()
 
@@ -36,6 +38,7 @@ def create_dim_counterparty(counterparty_df, address_df=None):
 
     return result
 
+
 def create_dim_transaction(transaction_df):
     dim_transaction_df = transaction_df.copy()
 
@@ -44,6 +47,7 @@ def create_dim_transaction(transaction_df):
 
     return dim_transaction_df
 
+
 def create_dim_payment_type(payment_df):
     dim_payment_type_df = payment_df.copy()
     
@@ -51,6 +55,7 @@ def create_dim_payment_type(payment_df):
     dim_payment_type_df = delete_cols_from_df(dim_payment_type_df, cols_to_delete)
 
     return dim_payment_type_df
+
 
 def create_lookup_from_json(json_file, key, value):
     
@@ -61,6 +66,7 @@ def create_lookup_from_json(json_file, key, value):
             lookup[element[key]] = element[value] 
     
     return lookup
+
 
 def create_dim_currency(currency_df, lookup):
     dim_currency = currency_df.copy()
@@ -73,6 +79,7 @@ def create_dim_currency(currency_df, lookup):
     dim_currency['currency_name'] = currency_names
 
     return dim_currency
+
 
 def create_dim_design(design_df):
     dim_design = design_df.copy()

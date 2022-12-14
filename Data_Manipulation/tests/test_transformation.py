@@ -34,6 +34,30 @@ def test_read_from_parquet_file():
 
     pd.testing.assert_frame_equal(result, df)
 
+def test_modify_data_for_dim_counterparty_table():
+
+    counterparty_df = pd.DataFrame({
+        'counterparty_id': [1, 2],
+        'counterparty_legal_name': ['Fahey and Sons', 'Leannon, Predovic and Morar'],
+        'legal_address_id': [15, 28],
+        'commercial_contact': ['Micheal Toy', 'Melba Sanford'],
+        'delivery_contact': ['Mrs. Lucy Runolfsdottir', ' Jean Hane III'],
+        'created_at': ['2022-11-03 14:20:51.563', '2022-11-03 14:20:51.563'],
+        'last_updated': ['2022-11-03 14:20:51.563', '2022-11-03 14:20:51.563'],
+    })
+
+    address_df = pd.DataFrame({
+        'counterparty_id': [1, 2],
+        'counterparty_legal_name': ['Fahey and Sons', 'Leannon, Predovic and Morar'],
+        'legal_address_id': [15, 28],
+        'commercial_contact': ['Micheal Toy', 'Melba Sanford'],
+        'delivery_contact': ['Mrs. Lucy Runolfsdottir', ' Jean Hane III'],
+        'created_at': ['2022-11-03 14:20:51.563', '2022-11-03 14:20:51.563'],
+        'last_updated': ['2022-11-03 14:20:51.563', '2022-11-03 14:20:51.563'],
+    })
+
+    pass
+
 # ensure that we can read the file in the landing zone bucket
 # convert the parquet file into readable python format
 # prepare that data to be used for the processed bucket

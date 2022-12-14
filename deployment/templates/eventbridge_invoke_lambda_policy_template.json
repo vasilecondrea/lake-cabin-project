@@ -1,0 +1,19 @@
+{
+    "Version": "2022-12-13",
+    "Statement": [
+	{
+	    "Effect": "Allow",
+	    "Action": "lambda:InvokeFunction",
+	    "Resource": "arn:aws:lambda:region:INSERT_ACCOUNT_ID_HERE:function:INSERT_FUNCTION_NAME_HERE",
+	    "Principal": {
+	    "Service": "events.amazonaws.com"
+	    },
+	    "Condition": {
+	        "ArnLike": {
+	            "AWS:SourceArn": "arn:aws:events:region:INSERT_ACCOUNT_ID_HERE:rule/INSERT_RULE_NAME_HERE"
+	        }
+	    },
+	    "Sid": "InvokeLambdaFunction"
+	}
+    ]
+}

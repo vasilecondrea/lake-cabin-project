@@ -1,6 +1,6 @@
 from moto import mock_s3
 import boto3
-from Data_Manipulation.src.transformation import read_files_from_s3_bucket
+from Data_Manipulation.src.transformation import read_files_from_s3_bucket, create_dim_counterparty, create_dim_transaction, create_dim_payment_type
 import pandas as pd
 
 @mock_s3
@@ -47,16 +47,73 @@ def test_modify_data_for_dim_counterparty_table():
     })
 
     address_df = pd.DataFrame({
+        'address_id': [15, 28],
+        'address_line_1': ['605 Haskell Trafficway', '079 Horacio Landing'],
+        'address_line_2': ['Axel Freeway', None],
+        'district': [None, None],
+        'city': ['East Bobbie', 'Utica'],
+        'postal_code': ['88253-4257', '93045'],
+        'country':['Heard Island and McDonald Islands', 'Austria'],
+        'phone':['9687 937447', '7772 084705'],
+        'created_at': ['2022-11-03 14:20:49.962', '2022-11-03 14:20:49.962'],
+        'last_updated': ['2022-11-03 14:20:49.962', '2022-11-03 14:20:49.962'],
+    })
+   
+    dim_counterparty_df = pd.DataFrame({
         'counterparty_id': [1, 2],
         'counterparty_legal_name': ['Fahey and Sons', 'Leannon, Predovic and Morar'],
-        'legal_address_id': [15, 28],
-        'commercial_contact': ['Micheal Toy', 'Melba Sanford'],
-        'delivery_contact': ['Mrs. Lucy Runolfsdottir', ' Jean Hane III'],
-        'created_at': ['2022-11-03 14:20:51.563', '2022-11-03 14:20:51.563'],
-        'last_updated': ['2022-11-03 14:20:51.563', '2022-11-03 14:20:51.563'],
+        'address_line_1': ['605 Haskell Trafficway', '079 Horacio Landing'],
+        'address_line_2': ['Axel Freeway', None],
+        'district': [None, None],
+        'city': ['East Bobbie', 'Utica'],
+        'postal_code': ['88253-4257', '93045'],
+        'country':['Heard Island and McDonald Islands', 'Austria'],
+        'phone':['9687 937447', '7772 084705']
     })
 
-    pass
+    result = create_dim_counterparty(counterparty_df, address_df)
+
+    pd.testing.assert_frame_equal(result, dim_counterparty_df) 
+
+def test_modify_data_for_dim_transaction_table():
+        
+    transaction_df = pd.DataFrame({
+        'transaction_id': [1, 2],
+        'transaction_type': ['PURCHASE', 'PURCHASE'],
+        'sales_order_id': [None, None],
+        'purchase_order_id': [2, 3],
+        'created_at': ['2022-11-03 14:20:52.186', '2022-11-03 14:20:52.187'],
+        'last_updated': ['2022-11-03 14:20:52.18', '2022-11-03 14:20:52.187']
+    })
+
+    dim_transaction_df = pd.DataFrame({
+        'transaction_id': [1, 2],
+        'transaction_type': ['PURCHASE', 'PURCHASE'],
+        'sales_order_id': [None, None],
+        'purchase_order_id': [2, 3]
+    })
+
+    result = create_dim_transaction(transaction_df)
+
+    pd.testing.assert_frame_equal(result, dim_transaction_df)
+
+def test_modify_data_for_dim_payment_type():
+
+    payment_type_df = pd.DataFrame({
+        'payment_type_id': [1, 2],
+        'payment_type_name': ['SALES_RECEIPT', 'SALES_REFUND'],
+        'created_at': ['2022-11-03 14:20:49.962', '2022-11-03 14:20:49.962'],
+        'last_updated': ['2022-11-03 14:20:49.962', '2022-11-03 14:20:49.962']
+    })
+
+    dim_payment_type = pd.DataFrame({
+        'payment_type_id': [1, 2],
+        'payment_type_name': ['SALES_RECEIPT', 'SALES_REFUND'],
+    })
+
+    result = create_dim_payment_type(payment_type_df)
+
+    pd.testing.assert_frame_equal(result, dim_payment_type)
 
 # ensure that we can read the file in the landing zone bucket
 # convert the parquet file into readable python format

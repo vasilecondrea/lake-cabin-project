@@ -1,6 +1,8 @@
 import pandas as pd
 import json
 import tempfile
+from datetime import datetime
+import math
 
 def retrieve_csv_from_s3_bucket(s3, bucket, key):
     with tempfile.NamedTemporaryFile(delete=False) as f:
@@ -20,6 +22,16 @@ def delete_cols_from_df(df, col_list):
     for col in col_list:
         del df[col]
     return df
+
+def create_lookup_from_json(json_file, key, value):
+    
+    with open(json_file) as f:
+        data = json.load(f)
+        lookup = {}
+        for element in data:
+            lookup[element[key]] = element[value] 
+    
+    return lookup
 
 
 def create_dim_counterparty(counterparty_df, address_df=None):
@@ -57,17 +69,6 @@ def create_dim_payment_type(payment_df):
     return dim_payment_type_df
 
 
-def create_lookup_from_json(json_file, key, value):
-    
-    with open(json_file) as f:
-        data = json.load(f)
-        lookup = {}
-        for element in data:
-            lookup[element[key]] = element[value] 
-    
-    return lookup
-
-
 def create_dim_currency(currency_df, lookup):
     dim_currency = currency_df.copy()
 
@@ -88,3 +89,73 @@ def create_dim_design(design_df):
     dim_design = delete_cols_from_df(dim_design, cols_to_delete)
 
     return dim_design
+
+
+def create_dim_date(sale_related_df):
+    sale_related_copy = sale_related_df.copy()
+
+    cols_to_extract = ['created_at', 'last_updated', 'agreed_delivery_date', 'agreed_payment_date']
+    # an if statement to extract different columns for payment
+
+    dim_date = pd.DataFrame({
+        'date_id': [],
+        'year': [],
+        'month': [],
+        'day': [],
+        'day_of_week': [],
+        'day_name': [],
+        'month_name': [],
+        'quarter': []
+    })
+
+    index = [0]
+
+    sale_related_copy = sale_related_copy[cols_to_extract]
+
+    for key in sale_related_copy:
+        for value in sale_related_copy[key]:
+            sep = ' '
+            time_string = value
+            time_string_stripped = time_string.split(sep, 1)[0]
+
+            time_datetime = datetime.strptime(time_string_stripped, '%Y-%m-%d')
+            
+            time_exists = False
+
+            if len(dim_date['date_id']) != 0:
+                for time in dim_date['date_id']:
+                    time_as_string = time.strftime('%Y-%m-%d')
+                    if time_as_string == time_string_stripped:
+                        time_exists = True
+                        break
+            
+            if time_exists == False:
+                df_to_add = pd.DataFrame({
+                    'date_id': [time_datetime],
+                    'year': [time_datetime.year],
+                    'month': [time_datetime.month],
+                    'day': [time_datetime.day],
+                    'day_of_week': [time_datetime.weekday()],
+                    'day_name': [time_datetime.strftime("%A")],
+                    'month_name': [time_datetime.strftime("%B")],
+                    'quarter': [math.ceil(time_datetime.month / 3)]
+                }, index=index)
+
+                frames = [dim_date, df_to_add]
+                dim_date = pd.concat(frames)
+                index[0] += 1
+
+    dim_date = dim_date.astype({'year':'int', 'month':'int', 'day':'int', 'day_of_week':'int', 'quarter':'int'})
+    return dim_date
+            
+
+def create_dim_location(address_df):
+    dim_location = address_df.copy()
+
+    cols_to_delete = ['created_at', 'last_updated']
+    dim_location = delete_cols_from_df(dim_location, cols_to_delete)
+
+    return dim_location
+
+def create_dim_staff():
+    pass

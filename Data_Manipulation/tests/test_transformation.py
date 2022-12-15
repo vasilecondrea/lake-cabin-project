@@ -1,8 +1,9 @@
 from moto import mock_s3
 import boto3
-from Data_Manipulation.src.transformation import retrieve_csv_from_s3_bucket, convert_csv_to_parquet_data_frame, create_dim_counterparty, create_dim_transaction, create_dim_payment_type, delete_cols_from_df, create_dim_currency, create_lookup_from_json, create_dim_design
+from Data_Manipulation.src.transformation import retrieve_csv_from_s3_bucket, convert_csv_to_parquet_data_frame, create_dim_counterparty, create_dim_transaction, create_dim_payment_type, delete_cols_from_df, create_dim_currency, create_lookup_from_json, create_dim_design, create_dim_date, create_dim_location, create_dim_staff
 import pandas as pd
 import filecmp
+from datetime import datetime
 
 @mock_s3
 def test_retrieve_csv_from_s3_bucket():
@@ -60,6 +61,21 @@ def test_delete_cols_from_df():
     pd.testing.assert_frame_equal(result, expected_df)
 
 
+def test_create_lookup_from_json():
+    
+    test_json_file = 'lookup_test.json'
+    
+    expected_lookup = {
+        "ALL": "Albania Lek",
+        "AFN": "Afghanistan Afghani",
+        "ARS": "Argentina Peso"
+    }
+
+    result = create_lookup_from_json(test_json_file, 'abbreviation', 'currency')
+
+    assert result == expected_lookup
+
+
 def test_modify_data_for_dim_counterparty_table():
 
     counterparty_df = pd.DataFrame({
@@ -110,7 +126,7 @@ def test_modify_data_for_dim_transaction_table():
         'sales_order_id': [None, None],
         'purchase_order_id': [2, 3],
         'created_at': ['2022-11-03 14:20:52.186', '2022-11-03 14:20:52.187'],
-        'last_updated': ['2022-11-03 14:20:52.18', '2022-11-03 14:20:52.187']
+        'last_updated': ['2022-11-03 14:20:52.186', '2022-11-03 14:20:52.187']
     })
 
     dim_transaction_df = pd.DataFrame({
@@ -142,21 +158,6 @@ def test_modify_data_for_dim_payment_type():
     result = create_dim_payment_type(payment_type_df)
 
     pd.testing.assert_frame_equal(result, dim_payment_type)
-
-
-def test_create_lookup_from_json():
-    
-    test_json_file = 'lookup_test.json'
-    
-    expected_lookup = {
-        "ALL": "Albania Lek",
-        "AFN": "Afghanistan Afghani",
-        "ARS": "Argentina Peso"
-    }
-
-    result = create_lookup_from_json(test_json_file, 'abbreviation', 'currency')
-
-    assert result == expected_lookup
 
 
 def test_modify_data_for_dim_currency():
@@ -206,6 +207,99 @@ def test_modify_data_for_dim_design():
     result = create_dim_design(design_df)
 
     pd.testing.assert_frame_equal(result, dim_design)
+
+
+def test_modify_data_for_dim_date_for_unique_dates_on_sales_and_purchase_orders():
+
+    sales_order_df = pd.DataFrame({
+        'sales_order_id': [1, 2],
+        'created_at': ['2022-11-03 14:20:52.186', '2022-11-03 14:20:52.186'],
+        'last_updated': ['2022-11-03 14:20:52.186', '2022-11-03 14:20:52.186'],
+        'design_id': [9, 3],
+        'staff_id': [16, 19],
+        'counterparty_id': [18, 8],
+        'units_sold': [84754, 42972],
+        'unit_price': [2.43, 3.94],
+        'currency_id': [3, 2],
+        'agreed_delivery_date': ['2022-11-10', '2022-11-07'],
+        'agreed_payment_date': ['2022-11-03', '2022-11-08'],
+        'agreed_delivery_location_id': [4, 8]
+    })
+
+    dim_date_from_transaction_df = pd.DataFrame({
+        'date_id': [datetime.strptime('2022-11-03', '%Y-%m-%d'), datetime.strptime('2022-11-10', '%Y-%m-%d'), datetime.strptime('2022-11-07', '%Y-%m-%d'),  datetime.strptime('2022-11-08', '%Y-%m-%d')],
+        'year': [2022, 2022, 2022, 2022],
+        'month': [11, 11, 11, 11],
+        'day': [3, 10, 7, 8],
+        'day_of_week': [3, 3, 0, 1],
+        'day_name': ['Thursday', 'Thursday', 'Monday', 'Tuesday'],
+        'month_name': ['November', 'November', 'November', 'November'],
+        'quarter': [4, 4, 4, 4]
+    })
+
+    result = create_dim_date(sales_order_df)
+
+    pd.testing.assert_frame_equal(result, dim_date_from_transaction_df)
+
+def test_modify_data_for_dim_date_for_unique_dates_on_payment():
+    pass
+
+def test_modify_data_for_dim_location():
+    address_df = pd.DataFrame({
+        'address_id': [15, 28],
+        'address_line_1': ['605 Haskell Trafficway', '079 Horacio Landing'],
+        'address_line_2': ['Axel Freeway', None],
+        'district': [None, None],
+        'city': ['East Bobbie', 'Utica'],
+        'postal_code': ['88253-4257', '93045'],
+        'country':['Heard Island and McDonald Islands', 'Austria'],
+        'phone':['9687 937447', '7772 084705'],
+        'created_at': ['2022-11-03 14:20:49.962', '2022-11-03 14:20:49.962'],
+        'last_updated': ['2022-11-03 14:20:49.962', '2022-11-03 14:20:49.962'],
+    })
+
+    dim_location_df = pd.DataFrame({
+        'address_id': [15, 28],
+        'address_line_1': ['605 Haskell Trafficway', '079 Horacio Landing'],
+        'address_line_2': ['Axel Freeway', None],
+        'district': [None, None],
+        'city': ['East Bobbie', 'Utica'],
+        'postal_code': ['88253-4257', '93045'],
+        'country':['Heard Island and McDonald Islands', 'Austria'],
+        'phone':['9687 937447', '7772 084705'],
+    })
+
+    result = create_dim_location(address_df)
+
+    pd.testing.assert_frame_equal(result, dim_location_df)
+
+
+def test_modify_data_for_dim_staff():
+    staff_df = pd.DataFrame({
+        'staff_id': [1, 2],
+        'first_name': ['Jeremie', 'Deron'],
+        'last_name': ['Franey', 'Beier'],
+        'department_id': [2, 6],
+        'email_address': ['jeremie.franey@terrifictotes.com', 'deron.beier@terrifictotes.com'],
+        'created_at': ['2022-11-03 14:20:51.563', '2022-11-03 14:20:51.563'],
+        'last_updated':['2022-11-03 14:20:51.563', '2022-11-03 14:20:51.563'],
+    })
+
+    dim_staff = pd.DataFrame({
+        
+    })
+
+
+def test_modify_data_for_fact_sales_order():
+    pass
+
+
+def test_modify_data_for_fact_payment():
+    pass
+
+
+def test_modify_data_for_fact_purchase_orders():
+    pass
 
 
 # ensure that we can read the file in the landing zone bucket

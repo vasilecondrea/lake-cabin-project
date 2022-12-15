@@ -95,7 +95,8 @@ def create_dim_date(sale_related_df):
     sale_related_copy = sale_related_df.copy()
 
     cols_to_extract = ['created_at', 'last_updated', 'agreed_delivery_date', 'agreed_payment_date']
-    # an if statement to extract different columns for payment
+    if "agreed_delivery_date" not in sale_related_copy:
+        cols_to_extract = ['created_at', 'last_updated', 'payment_date']
 
     dim_date = pd.DataFrame({
         'date_id': [],
@@ -157,5 +158,17 @@ def create_dim_location(address_df):
 
     return dim_location
 
-def create_dim_staff():
-    pass
+def create_dim_staff(staff_df, department_df=None):
+    dim_staff = staff_df.copy()
+
+    cols_to_delete = ['created_at', 'last_updated']
+    dim_staff = delete_cols_from_df(dim_staff, cols_to_delete)
+
+    department_df_copy = department_df.copy()
+    cols_to_delete = ['manager', 'created_at', 'last_updated']
+    department_df_copy = delete_cols_from_df(department_df_copy, cols_to_delete)
+
+    result = pd.merge(dim_staff, department_df_copy, on='department_id')
+    result = delete_cols_from_df(result, ['department_id']) 
+
+    return result[['staff_id', 'first_name', 'last_name', 'department_name', 'location', 'email_address']]

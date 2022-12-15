@@ -242,7 +242,35 @@ def test_modify_data_for_dim_date_for_unique_dates_on_sales_and_purchase_orders(
     pd.testing.assert_frame_equal(result, dim_date_from_transaction_df)
 
 def test_modify_data_for_dim_date_for_unique_dates_on_payment():
-    pass
+    payment_df = pd.DataFrame({
+        'payment_id': [2, 3],
+        'created_at': ['2022-11-03 14:20:52.187', '2022-11-03 14:20:52.186'],
+        'last_updated': ['2022-11-03 14:20:52.187', '2022-11-03 14:20:52.186'],
+        'transaction_id': [2, 3],
+        'counterparty_id': [15, 18],
+        'payment_amount': [552548.62, 205952.22],
+        'currency_id': [2, 3],
+        'payment_type_id': [3, 1],
+        'paid': [False, False],
+        'payment_date': ['2022-11-04', '2022-11-03'],
+        'company_ac_number': ['67305075', '81718079'],
+        'counterparty_ac_number': ['31622269', '47839086'],
+    })
+
+    dim_date_from_payment = pd.DataFrame({
+        'date_id': [datetime.strptime('2022-11-03', '%Y-%m-%d'), datetime.strptime('2022-11-4', '%Y-%m-%d')],
+        'year': [2022, 2022],
+        'month': [11, 11],
+        'day': [3, 4],
+        'day_of_week': [3, 4],
+        'day_name': ['Thursday', 'Friday'],
+        'month_name': ['November', 'November'],
+        'quarter': [4, 4]
+    })
+
+    result = create_dim_date(payment_df)
+
+    pd.testing.assert_frame_equal(result, dim_date_from_payment)
 
 def test_modify_data_for_dim_location():
     address_df = pd.DataFrame({
@@ -285,9 +313,27 @@ def test_modify_data_for_dim_staff():
         'last_updated':['2022-11-03 14:20:51.563', '2022-11-03 14:20:51.563'],
     })
 
-    dim_staff = pd.DataFrame({
-        
+    department_df = pd.DataFrame({
+        'department_id': [6, 2],
+        'department_name': ['Facilities', 'Purchasing'],
+        'location': ['Manchester', 'Manchester'],
+        'manager': ['Shelley Levene', 'Naomi Lapaglia'],
+        'created_at': ['2022-11-03 14:20:49.962', '2022-11-03 14:20:49.962'],
+        'last_updated':['2022-11-03 14:20:49.962', '2022-11-03 14:20:49.962'],
     })
+
+    dim_staff = pd.DataFrame({
+        'staff_id': [1, 2],
+        'first_name': ['Jeremie', 'Deron'],
+        'last_name': ['Franey', 'Beier'],
+        'department_name': ['Purchasing', 'Facilities'],
+        'location': ['Manchester', 'Manchester'],
+        'email_address': ['jeremie.franey@terrifictotes.com', 'deron.beier@terrifictotes.com'],
+    })
+
+    result = create_dim_staff(staff_df, department_df)
+
+    pd.testing.assert_frame_equal(result, dim_staff)
 
 
 def test_modify_data_for_fact_sales_order():

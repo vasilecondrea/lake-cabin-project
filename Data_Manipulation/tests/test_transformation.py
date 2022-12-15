@@ -489,8 +489,12 @@ def test_split_datetime_to_date_and_time():
     assert result['dates'] == expected_date
     assert result['times'] == expected_time
 
-
+@mock_s3
 def test_lambda_handler():
+    bucket = 'landing_zone_bucket'
+    s3 = boto3.client("s3")
+    s3.create_bucket(Bucket=bucket)
+    
     pass
 
 

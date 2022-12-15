@@ -7,12 +7,38 @@ import boto3
 
 def lambda_handler(event, context):
     s3 = boto3.client("s3")
-    bucket= 'landing_zone_bucket'
-    list_objects = s3.list_objects(Bucket=bucket)
-    for obj in list_objects:
-        file = retrieve_csv_from_s3_bucket(s3, bucket, obj)
-    # switch case to check file name and call correct function to convert data frame and call function to upload file as parquet 
-    # to s3 processed bucket and write test
+    landing_zone_bucket = 'landing_zone_bucket'
+    processed_bucket = 'processed_bucket'
+    list_objects = s3.list_objects(Bucket=landing_zone_bucket)
+    
+    for obj_name in list_objects:
+        file = retrieve_csv_from_s3_bucket(s3, landing_zone_bucket, obj_name)
+        df = convert_csv_to_parquet_data_frame(file)
+
+        if obj_name == 'payment_type.csv':
+            save_and_upload_data_frame_as_parquet_file(s3, processed_bucket, 'dim_payment_type.parquet', create_dim_payment_type(df))
+        elif obj_name == 'transaction.csv':
+            save_and_upload_data_frame_as_parquet_file(s3, processed_bucket, 'dim_transaction.parquet', create_dim_transaction(df))
+        elif obj_name == 'currency.csv':
+            save_and_upload_data_frame_as_parquet_file(s3, processed_bucket, 'dim_currency.parquet', create_dim_currency(df))
+        elif obj_name == 'design.csv':
+            save_and_upload_data_frame_as_parquet_file(s3, processed_bucket, 'dim_design.parquet', create_dim_design(df))
+        elif obj_name == 'staff.csv':
+            department_file = retrieve_csv_from_s3_bucket(s3, landing_zone_bucket, 'department.csv')
+            department_df = convert_csv_to_parquet_data_frame(department_file)
+            save_and_upload_data_frame_as_parquet_file(s3, processed_bucket, 'dim_staff.parquet', create_dim_staff(df, department_df))
+        elif obj_name == 'counterparty.csv':
+            address_file = retrieve_csv_from_s3_bucket(s3, landing_zone_bucket, 'address.csv')
+            address_df = convert_csv_to_parquet_data_frame(address_file)
+            save_and_upload_data_frame_as_parquet_file(s3, processed_bucket, 'dim_counterparty.parquet', create_dim_counterparty(df, address_df))
+        elif obj_name == 'payment.csv':
+            save_and_upload_data_frame_as_parquet_file(s3, processed_bucket, 'fact_payment.parquet', create_fact_payment(df))
+        elif obj_name == 'sales_order.csv':
+            save_and_upload_data_frame_as_parquet_file(s3, processed_bucket, 'fact_sales_order.parquet', create_fact_sales_order(df))
+        elif obj_name == 'purchase_order.csv':
+            save_and_upload_data_frame_as_parquet_file(s3, processed_bucket, 'fact_purchase_orders.parquet', create_fact_purchase_orders(df))
+
+    # write tests
     return 'processing finished!'
 
 def retrieve_csv_from_s3_bucket(s3, bucket, key):
@@ -36,7 +62,6 @@ def delete_cols_from_df(df, col_list):
     return df
 
 def create_lookup_from_json(json_file, key, value):
-    
     with open(json_file) as f:
         data = json.load(f)
         lookup = {}
@@ -46,7 +71,7 @@ def create_lookup_from_json(json_file, key, value):
     return lookup
 
 
-def create_dim_counterparty(counterparty_df, address_df=None):
+def create_dim_counterparty(counterparty_df, address_df):
     dim_counterparty_df = counterparty_df.copy()
 
     cols_to_delete = ['commercial_contact', 'delivery_contact', 'created_at', 'last_updated']
@@ -171,7 +196,7 @@ def create_dim_location(address_df):
     return dim_location
 
 
-def create_dim_staff(staff_df, department_df=None):
+def create_dim_staff(staff_df, department_df):
     dim_staff = staff_df.copy()
 
     cols_to_delete = ['created_at', 'last_updated']

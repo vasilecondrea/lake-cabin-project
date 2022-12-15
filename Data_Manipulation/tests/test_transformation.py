@@ -232,7 +232,8 @@ def test_modify_data_for_dim_date_for_unique_dates_on_sales_and_purchase_orders(
     })
 
     dim_date_from_transaction_df = pd.DataFrame({
-        'date_id': [datetime.strptime('2022-11-03', '%Y-%m-%d'), datetime.strptime('2022-11-10', '%Y-%m-%d'), datetime.strptime('2022-11-07', '%Y-%m-%d'),  datetime.strptime('2022-11-08', '%Y-%m-%d')],
+        'date_id': [datetime.strptime('2022-11-03', '%Y-%m-%d'), datetime.strptime('2022-11-10', '%Y-%m-%d'), \
+            datetime.strptime('2022-11-07', '%Y-%m-%d'),  datetime.strptime('2022-11-08', '%Y-%m-%d')],
         'year': [2022, 2022, 2022, 2022],
         'month': [11, 11, 11, 11],
         'day': [3, 10, 7, 8],

@@ -11,7 +11,8 @@ def lambda_handler(event, context):
     list_objects = s3.list_objects(Bucket=bucket)
     for obj in list_objects:
         file = retrieve_csv_from_s3_bucket(s3, bucket, obj)
-    # switch case to check file name and call correct function to convert data frame and call function to upload file as parquet to s3 processed bucket and write test
+    # switch case to check file name and call correct function to convert data frame and call function to upload file as parquet 
+    # to s3 processed bucket and write test
     return 'processing finished!'
 
 def retrieve_csv_from_s3_bucket(s3, bucket, key):
@@ -199,7 +200,8 @@ def create_fact_sales_order(sales_order_df):
 
     fact_sales_order = fact_sales_order.rename(columns={'staff_id':'sales_staff_id'})
 
-    return fact_sales_order[['sales_order_id', 'created_date', 'created_time', 'last_updated_date', 'last_updated_time', 'sales_staff_id', 'counterparty_id', 'currency_id', 'design_id', 'agreed_delivery_date', 'agreed_payment_date', 'agreed_delivery_location_id']]
+    return fact_sales_order[['sales_order_id', 'created_date', 'created_time', 'last_updated_date', 'last_updated_time', 'sales_staff_id', \
+        'counterparty_id', 'currency_id', 'design_id', 'agreed_delivery_date', 'agreed_payment_date', 'agreed_delivery_location_id']]
 
 
 def create_fact_payment(payment_df):
@@ -213,7 +215,8 @@ def create_fact_payment(payment_df):
     cols_to_delete = ['created_at', 'last_updated', 'company_ac_number', 'counterparty_ac_number']
     fact_payment = delete_cols_from_df(fact_payment, cols_to_delete)
 
-    return fact_payment[['payment_id', 'created_date', 'created_time', 'last_updated_date', 'last_updated_time', 'transaction_id', 'counterparty_id', 'payment_amount', 'currency_id', 'payment_type_id', 'paid', 'payment_date']]
+    return fact_payment[['payment_id', 'created_date', 'created_time', 'last_updated_date', 'last_updated_time', 'transaction_id', \
+        'counterparty_id', 'payment_amount', 'currency_id', 'payment_type_id', 'paid', 'payment_date']]
 
 
 def create_fact_purchase_orders(purchase_df):
@@ -227,7 +230,9 @@ def create_fact_purchase_orders(purchase_df):
     cols_to_delete = ['created_at', 'last_updated']
     fact_purchase_orders = delete_cols_from_df(fact_purchase_orders, cols_to_delete)
 
-    return fact_purchase_orders[['purchase_order_id', 'created_date', 'created_time', 'last_updated_date', 'last_updated_time', 'staff_id', 'counterparty_id', 'item_code', 'item_quantity', 'item_unit_price', 'currency_id', 'agreed_delivery_date', 'agreed_payment_date', 'agreed_delivery_location_id']]
+    return fact_purchase_orders[['purchase_order_id', 'created_date', 'created_time', 'last_updated_date', 'last_updated_time', \
+        'staff_id', 'counterparty_id', 'item_code', 'item_quantity', 'item_unit_price', 'currency_id', 'agreed_delivery_date', \
+        'agreed_payment_date', 'agreed_delivery_location_id']]
 
 
 def save_and_upload_data_frame_as_parquet_file(s3, bucket, key, df):

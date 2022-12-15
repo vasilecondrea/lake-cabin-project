@@ -347,6 +347,12 @@ def test_modify_data_for_fact_payment():
 def test_modify_data_for_fact_purchase_orders():
     pass
 
+def test_save_data_frame_as_parquet_file():
+    pass
+
+def test_upload_parquet_file_to_processed_s3_bucket():
+    pass
+
 
 # ensure that we can read the file in the landing zone bucket
 # convert the parquet file into readable python format

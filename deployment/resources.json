@@ -1,4 +1,6 @@
 {
-  "s3_read_write_policy": "arn_has_been_created",
-  "cloudwatch_log_policy": "arn_has_been_created"
+  "cloudwatch_log_policy": "arn:aws:iam::094362209857:policy/cloudwatch-policy-ingestion-script-151222-7",
+  "s3_read_write_policy": "arn:aws:iam::094362209857:policy/s3-policy-ingestion-script-151222-7",
+  "iam_role": "arn:aws:iam::094362209857:role/ingestion-script-151222-7-role",
+  "eventbridge_rule": "arn:aws:events:us-east-1:094362209857:rule/ingestion-script-151222-7-rule"
 }

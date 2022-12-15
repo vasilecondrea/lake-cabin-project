@@ -18,17 +18,22 @@ CODE_BUCKET_NAME=code-bucket-${SUFFIX}
 INGESTION_BUCKET=ingested-data-bucket-1
 wait
 
+echo "Generating AWS secret for source database credentials..."
+aws secretsmanager create-secret --name source-db-creds --secret-string file://__source_creds.json
+aws secretsmanager create-secret --name destination-db-creds --secret-string file://__destination_creds.json
+wait
+
 echo "Creating bucket code bucket '${CODE_BUCKET_NAME}'..."
 aws s3 mb s3://${CODE_BUCKET_NAME}
 wait
 
 echo "Creating function deployment package..."
 cd ../src/ingestion-folder/
-zip ../../deployment/test-ingestion.zip test-ingestion.py 
+zip ../../deployment/__test-ingestion.zip __test-ingestion.py 
 cd ../../deployment
 wait
 
-echo "Uploading the deployment package"
+echo "Uploading the deployment package..."
 aws s3 cp test-ingestion.zip s3://${CODE_BUCKET_NAME}/${FUNCTION_NAME}/test-ingestion.zip
 wait
 

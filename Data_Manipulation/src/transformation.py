@@ -3,9 +3,20 @@ import json
 import tempfile
 from datetime import datetime
 import math
+import boto3
+
+def lambda_handler(event, context):
+    s3 = boto3.client("s3")
+    bucket= 'landing_zone_bucket'
+    list_objects = s3.list_objects(Bucket=bucket)
+    for obj in list_objects:
+        file = retrieve_csv_from_s3_bucket(s3, bucket, obj)
+    # switch case to check file name and call correct function to convert data frame and call function to upload file as parquet to s3 processed bucket and write test
+    return 'processing finished!'
 
 def retrieve_csv_from_s3_bucket(s3, bucket, key):
     with tempfile.NamedTemporaryFile(delete=False) as f:
+        f.name = key
         s3.download_file(Bucket=bucket, Key=key, Filename=f.name)
         return f
 
@@ -172,3 +183,118 @@ def create_dim_staff(staff_df, department_df=None):
     result = delete_cols_from_df(result, ['department_id']) 
 
     return result[['staff_id', 'first_name', 'last_name', 'department_name', 'location', 'email_address']]
+
+def create_fact_sales_order(sales_order_df):
+    fact_sales_order = sales_order_df.copy()
+
+    created_date = []
+    created_time = []
+
+    for value in fact_sales_order['created_at']:
+        sep = ' '
+        time_string = value
+        date = time_string.split(sep, 1)[0]
+        time = time_string.split(sep, 1)[1]
+        created_date.append(date)
+        created_time.append(time)
+    
+    fact_sales_order['created_date'] = created_date
+    fact_sales_order['created_time'] = created_time
+
+    last_updated_date = []
+    last_updated_time = []
+
+    for value in fact_sales_order['last_updated']:
+        sep = ' '
+        time_string = value
+        date = time_string.split(sep, 1)[0]
+        time = time_string.split(sep, 1)[1]
+        last_updated_date.append(date)
+        last_updated_time.append(time)
+    
+    fact_sales_order['last_updated_date'] = last_updated_date
+    fact_sales_order['last_updated_time'] = last_updated_time   
+
+    cols_to_delete = ['units_sold', 'unit_price', 'created_at', 'last_updated']
+    fact_sales_order = delete_cols_from_df(fact_sales_order, cols_to_delete)
+
+    fact_sales_order = fact_sales_order.rename(columns={'staff_id':'sales_staff_id'})
+
+    return fact_sales_order[['sales_order_id', 'created_date', 'created_time', 'last_updated_date', 'last_updated_time', 'sales_staff_id', 'counterparty_id', 'currency_id', 'design_id', 'agreed_delivery_date', 'agreed_payment_date', 'agreed_delivery_location_id']]
+
+def create_fact_payment(payment_df):
+    fact_payment = payment_df.copy()
+
+    created_date = []
+    created_time = []
+
+    for value in fact_payment['created_at']:
+        sep = ' '
+        time_string = value
+        date = time_string.split(sep, 1)[0]
+        time = time_string.split(sep, 1)[1]
+        created_date.append(date)
+        created_time.append(time)
+    
+    fact_payment['created_date'] = created_date
+    fact_payment['created_time'] = created_time
+
+    last_updated_date = []
+    last_updated_time = []
+
+    for value in fact_payment['last_updated']:
+        sep = ' '
+        time_string = value
+        date = time_string.split(sep, 1)[0]
+        time = time_string.split(sep, 1)[1]
+        last_updated_date.append(date)
+        last_updated_time.append(time)
+    
+    fact_payment['last_updated_date'] = last_updated_date
+    fact_payment['last_updated_time'] = last_updated_time   
+    
+    cols_to_delete = ['created_at', 'last_updated', 'company_ac_number', 'counterparty_ac_number']
+    fact_payment = delete_cols_from_df(fact_payment, cols_to_delete)
+
+    return fact_payment[['payment_id', 'created_date', 'created_time', 'last_updated_date', 'last_updated_time', 'transaction_id', 'counterparty_id', 'payment_amount', 'currency_id', 'payment_type_id', 'paid', 'payment_date']]
+
+def create_fact_purchase_orders(purchase_df):
+    fact_purchase_orders = purchase_df.copy()
+
+    created_date = []
+    created_time = []
+
+    for value in fact_purchase_orders['created_at']:
+        sep = ' '
+        time_string = value
+        date = time_string.split(sep, 1)[0]
+        time = time_string.split(sep, 1)[1]
+        created_date.append(date)
+        created_time.append(time)
+    
+    fact_purchase_orders['created_date'] = created_date
+    fact_purchase_orders['created_time'] = created_time
+
+    last_updated_date = []
+    last_updated_time = []
+
+    for value in fact_purchase_orders['last_updated']:
+        sep = ' '
+        time_string = value
+        date = time_string.split(sep, 1)[0]
+        time = time_string.split(sep, 1)[1]
+        last_updated_date.append(date)
+        last_updated_time.append(time)
+    
+    fact_purchase_orders['last_updated_date'] = last_updated_date
+    fact_purchase_orders['last_updated_time'] = last_updated_time   
+    
+    cols_to_delete = ['created_at', 'last_updated']
+    fact_purchase_orders = delete_cols_from_df(fact_purchase_orders, cols_to_delete)
+
+    return fact_purchase_orders[['purchase_order_id', 'created_date', 'created_time', 'last_updated_date', 'last_updated_time', 'staff_id', 'counterparty_id', 'item_code', 'item_quantity', 'item_unit_price', 'currency_id', 'agreed_delivery_date', 'agreed_payment_date', 'agreed_delivery_location_id']]
+
+def save_and_upload_data_frame_as_parquet_file(s3, bucket, key, df):
+    with tempfile.NamedTemporaryFile(delete=False) as f:
+        df.to_parquet(f.name)
+        s3.upload_file(Filename=f.name, Bucket=bucket, Key=key)

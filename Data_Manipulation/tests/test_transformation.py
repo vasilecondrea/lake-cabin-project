@@ -1,9 +1,10 @@
 from moto import mock_s3
 import boto3
-from Data_Manipulation.src.transformation import retrieve_csv_from_s3_bucket, convert_csv_to_parquet_data_frame, create_dim_counterparty, create_dim_transaction, create_dim_payment_type, delete_cols_from_df, create_dim_currency, create_lookup_from_json, create_dim_design, create_dim_date, create_dim_location, create_dim_staff
+from Data_Manipulation.src.transformation import retrieve_csv_from_s3_bucket, convert_csv_to_parquet_data_frame, create_dim_counterparty, create_dim_transaction, create_dim_payment_type, delete_cols_from_df, create_dim_currency, create_lookup_from_json, create_dim_design, create_dim_date, create_dim_location, create_dim_staff, create_fact_sales_order, create_fact_payment, create_fact_purchase_orders, save_and_upload_data_frame_as_parquet_file
 import pandas as pd
 import filecmp
 from datetime import datetime
+import tempfile
 
 @mock_s3
 def test_retrieve_csv_from_s3_bucket():
@@ -337,22 +338,138 @@ def test_modify_data_for_dim_staff():
 
 
 def test_modify_data_for_fact_sales_order():
-    pass
+    sales_order_df = pd.DataFrame({
+        'sales_order_id': [1, 2],
+        'created_at': ['2022-11-03 14:20:52.186', '2022-11-03 14:20:52.186'],
+        'last_updated': ['2022-11-03 14:20:52.186', '2022-11-03 14:20:52.186'],
+        'design_id': [9, 3],
+        'staff_id': [16, 19],
+        'counterparty_id': [18, 8],
+        'units_sold': [84754, 42972],
+        'unit_price': [2.43, 3.94],
+        'currency_id': [3, 2],
+        'agreed_delivery_date': ['2022-11-10', '2022-11-07'],
+        'agreed_payment_date': ['2022-11-03', '2022-11-08'],
+        'agreed_delivery_location_id': [4, 8]
+    })
 
+    fact_sales_order = pd.DataFrame({
+        'sales_order_id': [1, 2],
+        'created_date': ['2022-11-03', '2022-11-03'],
+        'created_time': ['14:20:52.186', '14:20:52.186'],  
+        'last_updated_date': ['2022-11-03', '2022-11-03'],
+        'last_updated_time': ['14:20:52.186', '14:20:52.186'],
+        'sales_staff_id': [16, 19],
+        'counterparty_id': [18, 8],
+        'currency_id': [3, 2],
+        'design_id': [9, 3],
+        'agreed_delivery_date': ['2022-11-10', '2022-11-07'],
+        'agreed_payment_date': ['2022-11-03', '2022-11-08'],
+        'agreed_delivery_location_id': [4, 8]
+    })
+    
+    result = create_fact_sales_order(sales_order_df)
+
+    pd.testing.assert_frame_equal(result, fact_sales_order)
 
 def test_modify_data_for_fact_payment():
-    pass
+    payment_df = pd.DataFrame({
+        'payment_id': [2, 3],
+        'created_at': ['2022-11-03 14:20:52.187', '2022-11-03 14:20:52.186'],
+        'last_updated': ['2022-11-03 14:20:52.187', '2022-11-03 14:20:52.186'],
+        'transaction_id': [2, 3],
+        'counterparty_id': [15, 18],
+        'payment_amount': [552548.62, 205952.22],
+        'currency_id': [2, 3],
+        'payment_type_id': [3, 1],
+        'paid': [False, False],
+        'payment_date': ['2022-11-04', '2022-11-03'],
+        'company_ac_number': ['67305075', '81718079'],
+        'counterparty_ac_number': ['31622269', '47839086'],
+    })
+
+    fact_payment = pd.DataFrame({
+        'payment_id': [2, 3],
+        'created_date': ['2022-11-03', '2022-11-03'],
+        'created_time': ['14:20:52.187', '14:20:52.186'],  
+        'last_updated_date': ['2022-11-03', '2022-11-03'],
+        'last_updated_time': ['14:20:52.187', '14:20:52.186'],
+        'transaction_id': [2, 3],
+        'counterparty_id': [15, 18],
+        'payment_amount': [552548.62, 205952.22],
+        'currency_id': [2, 3],
+        'payment_type_id': [3, 1],
+        'paid': [False, False],
+        'payment_date': ['2022-11-04', '2022-11-03']
+    })
+
+    result = create_fact_payment(payment_df)
+
+    pd.testing.assert_frame_equal(result, fact_payment)
 
 
 def test_modify_data_for_fact_purchase_orders():
-    pass
+    purchase_df = pd.DataFrame({
+        'purchase_order_id': [1, 2],
+        'created_at': ['2022-11-03 14:20:52.187', '2022-11-03 14:20:52.186'],
+        'last_updated': ['2022-11-03 14:20:52.187', '2022-11-03 14:20:52.186'],
+        'staff_id': [12, 20],
+        'counterparty_id': [11, 17],
+        'item_code': ['ZDOI5EA', 'QLZLEXR'],
+        'item_quantity': [371, 286],
+        'item_unit_price': [361.39, 199.04],
+        'currency_id': [2, 2],
+        'agreed_delivery_date': ['2022-11-09', '2022-11-04'],
+        'agreed_payment_date': ['2022-11-07', '2022-11-07'],
+        'agreed_delivery_location_id': [6, 8]
+    })
 
-def test_save_data_frame_as_parquet_file():
-    pass
+    fact_purchase_orders = pd.DataFrame({
+        'purchase_order_id': [1, 2],
+        'created_date': ['2022-11-03', '2022-11-03'],
+        'created_time': ['14:20:52.187', '14:20:52.186'],  
+        'last_updated_date': ['2022-11-03', '2022-11-03'],
+        'last_updated_time': ['14:20:52.187', '14:20:52.186'],
+        'staff_id': [12, 20],
+        'counterparty_id': [11, 17],
+        'item_code': ['ZDOI5EA', 'QLZLEXR'],
+        'item_quantity': [371, 286],
+        'item_unit_price': [361.39, 199.04],
+        'currency_id': [2, 2],
+        'agreed_delivery_date': ['2022-11-09', '2022-11-04'],
+        'agreed_payment_date': ['2022-11-07', '2022-11-07'],
+        'agreed_delivery_location_id': [6, 8]
+    })
 
-def test_upload_parquet_file_to_processed_s3_bucket():
-    pass
+    result = create_fact_purchase_orders(purchase_df)
 
+    pd.testing.assert_frame_equal(result, fact_purchase_orders)
+
+@mock_s3
+def test_save_and_upload_data_frame_as_parquet_file():
+    
+    test_df = pd.DataFrame({
+        'col_1': [1, 2],
+        'col_2': [1, 2]
+    })
+
+    expected_df = pd.DataFrame({
+        'col_1': [1, 2],
+        'col_2': [1, 2]
+    })
+
+    
+    bucket = 'processed_bucket'
+    key = 'test_df.parquet'
+    s3 = boto3.client("s3")
+    s3.create_bucket(Bucket=bucket)
+ 
+    save_and_upload_data_frame_as_parquet_file(s3, bucket, key, test_df)
+    
+    with tempfile.NamedTemporaryFile(delete=False) as f:
+        s3.download_file(Bucket=bucket, Key=key, Filename=f.name)
+        result = pd.read_parquet(f.name)
+        pd.testing.assert_frame_equal(result, expected_df)
 
 # ensure that we can read the file in the landing zone bucket
 # convert the parquet file into readable python format

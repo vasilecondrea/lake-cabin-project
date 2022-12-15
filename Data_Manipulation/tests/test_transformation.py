@@ -1,6 +1,10 @@
 from moto import mock_s3
 import boto3
-from Data_Manipulation.src.transformation import retrieve_csv_from_s3_bucket, convert_csv_to_parquet_data_frame, create_dim_counterparty, create_dim_transaction, create_dim_payment_type, delete_cols_from_df, create_dim_currency, create_lookup_from_json, create_dim_design, create_dim_date, create_dim_location, create_dim_staff, create_fact_sales_order, create_fact_payment, create_fact_purchase_orders, save_and_upload_data_frame_as_parquet_file
+from Data_Manipulation.src.transformation import \
+    retrieve_csv_from_s3_bucket, convert_csv_to_parquet_data_frame, create_dim_counterparty, create_dim_transaction, \
+    create_dim_payment_type, delete_cols_from_df, create_dim_currency, create_lookup_from_json, create_dim_design, \
+    create_dim_date, create_dim_location, create_dim_staff, create_fact_sales_order, create_fact_payment, \
+    create_fact_purchase_orders, save_and_upload_data_frame_as_parquet_file, split_datetime_list_to_date_and_time_list, lambda_handler
 import pandas as pd
 import filecmp
 from datetime import datetime
@@ -242,6 +246,7 @@ def test_modify_data_for_dim_date_for_unique_dates_on_sales_and_purchase_orders(
 
     pd.testing.assert_frame_equal(result, dim_date_from_transaction_df)
 
+
 def test_modify_data_for_dim_date_for_unique_dates_on_payment():
     payment_df = pd.DataFrame({
         'payment_id': [2, 3],
@@ -272,6 +277,7 @@ def test_modify_data_for_dim_date_for_unique_dates_on_payment():
     result = create_dim_date(payment_df)
 
     pd.testing.assert_frame_equal(result, dim_date_from_payment)
+
 
 def test_modify_data_for_dim_location():
     address_df = pd.DataFrame({
@@ -372,6 +378,7 @@ def test_modify_data_for_fact_sales_order():
 
     pd.testing.assert_frame_equal(result, fact_sales_order)
 
+
 def test_modify_data_for_fact_payment():
     payment_df = pd.DataFrame({
         'payment_id': [2, 3],
@@ -458,7 +465,6 @@ def test_save_and_upload_data_frame_as_parquet_file():
         'col_2': [1, 2]
     })
 
-    
     bucket = 'processed_bucket'
     key = 'test_df.parquet'
     s3 = boto3.client("s3")
@@ -471,9 +477,24 @@ def test_save_and_upload_data_frame_as_parquet_file():
         result = pd.read_parquet(f.name)
         pd.testing.assert_frame_equal(result, expected_df)
 
+
+def test_split_datetime_to_date_and_time():
+    datetime = ['2022-11-03 14:20:49.962']
+    expected_date = ['2022-11-03']
+    expected_time = ['14:20:49.962']
+
+    result = split_datetime_list_to_date_and_time_list(datetime)
+
+    assert result['dates'] == expected_date
+    assert result['times'] == expected_time
+
+
+def test_lambda_handler():
+    pass
+
+
 # ensure that we can read the file in the landing zone bucket
 # convert the parquet file into readable python format
 # prepare that data to be used for the processed bucket
 # convert back to parquet
 # store data in processed bucket
-# upload processed bucket data into warehouse

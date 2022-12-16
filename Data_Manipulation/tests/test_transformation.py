@@ -491,11 +491,19 @@ def test_split_datetime_to_date_and_time():
 
 @mock_s3
 def test_lambda_handler():
-    bucket = 'landing_zone_bucket'
+
+    landing_bucket = 'landing_zone_bucket'
+    processed_bucket = 'processed_bucket'
+    payment_file = "payment_type.csv"
+    currency_file = "currency.csv"
+
     s3 = boto3.client("s3")
-    s3.create_bucket(Bucket=bucket)
-    
-    pass
+    s3.create_bucket(Bucket=landing_bucket)
+    s3.create_bucket(Bucket=processed_bucket)
+    s3.upload_file(Filename=payment_file, Bucket=landing_bucket, Key=payment_file)
+    s3.upload_file(Filename=currency_file, Bucket=landing_bucket, Key=currency_file)
+
+    lambda_handler({}, object())
 
 
 # ensure that we can read the file in the landing zone bucket

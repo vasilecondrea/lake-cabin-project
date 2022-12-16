@@ -9,8 +9,9 @@ def lambda_handler(event, context):
     s3 = boto3.client("s3")
     landing_zone_bucket = 'landing_zone_bucket'
     processed_bucket = 'processed_bucket'
-    list_objects = s3.list_objects(Bucket=landing_zone_bucket)
-    
+    list_objects = [s3.list_objects(Bucket=landing_zone_bucket)['Contents'][0]['Key']]
+    lookup = create_lookup_from_json('currency-symbols.json', 'abbreviation', 'currency')
+
     for obj_name in list_objects:
         file = retrieve_csv_from_s3_bucket(s3, landing_zone_bucket, obj_name)
         df = convert_csv_to_parquet_data_frame(file)
@@ -20,7 +21,7 @@ def lambda_handler(event, context):
         elif obj_name == 'transaction.csv':
             save_and_upload_data_frame_as_parquet_file(s3, processed_bucket, 'dim_transaction.parquet', create_dim_transaction(df))
         elif obj_name == 'currency.csv':
-            save_and_upload_data_frame_as_parquet_file(s3, processed_bucket, 'dim_currency.parquet', create_dim_currency(df))
+            save_and_upload_data_frame_as_parquet_file(s3, processed_bucket, 'dim_currency.parquet', create_dim_currency(df, lookup))
         elif obj_name == 'design.csv':
             save_and_upload_data_frame_as_parquet_file(s3, processed_bucket, 'dim_design.parquet', create_dim_design(df))
         elif obj_name == 'staff.csv':
@@ -38,8 +39,10 @@ def lambda_handler(event, context):
         elif obj_name == 'purchase_order.csv':
             save_and_upload_data_frame_as_parquet_file(s3, processed_bucket, 'fact_purchase_orders.parquet', create_fact_purchase_orders(df))
 
-    # write tests
-    return 'processing finished!'
+    message = 'Finished processing!'
+    return { 
+        'message' : message
+    }
 
 def retrieve_csv_from_s3_bucket(s3, bucket, key):
     with tempfile.NamedTemporaryFile(delete=False) as f:
@@ -49,12 +52,12 @@ def retrieve_csv_from_s3_bucket(s3, bucket, key):
 
 
 def convert_csv_to_parquet_data_frame(file):
-    with tempfile.NamedTemporaryFile(delete=False) as f:
-        df = pd.read_csv(file)
-        df.to_parquet(f.name)
-        df = pd.read_parquet(f.name)
-        return df
-
+    with open(file.name, 'r') as orig_f:
+        with tempfile.NamedTemporaryFile(delete=False) as f:
+            df = pd.read_csv(orig_f)
+            df.to_parquet(f.name)
+            df = pd.read_parquet(f.name)
+            return df
 
 def delete_cols_from_df(df, col_list):
     for col in col_list:
@@ -261,6 +264,7 @@ def create_fact_purchase_orders(purchase_df):
 
 
 def save_and_upload_data_frame_as_parquet_file(s3, bucket, key, df):
+    print(bucket)
     with tempfile.NamedTemporaryFile(delete=False) as f:
         df.to_parquet(f.name)
         s3.upload_file(Filename=f.name, Bucket=bucket, Key=key)

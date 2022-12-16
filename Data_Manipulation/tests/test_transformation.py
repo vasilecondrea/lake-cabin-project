@@ -493,8 +493,8 @@ def test_split_datetime_to_date_and_time():
 @mock_s3
 def test_lambda_handler():
 
-    landing_bucket = 'landing_zone_bucket'
-    processed_bucket = 'processed_bucket'
+    landing_bucket = 'ingested-data-bucket-1'
+    processed_bucket = 'processed-data-bucket-1'
     payment_file = "payment_type.csv"
     currency_file = "currency.csv"
 
@@ -504,4 +504,10 @@ def test_lambda_handler():
     s3.upload_file(Filename=payment_file, Bucket=landing_bucket, Key=payment_file)
     s3.upload_file(Filename=currency_file, Bucket=landing_bucket, Key=currency_file)
 
-    lambda_handler({}, object())
+    result = lambda_handler({}, object())
+
+    assert result['message'] == 'Finished processing!'
+
+    # script to do the following:
+    # automate the upload of the transformation.py script
+    # creates new lambda function to invoke the transformation.py script

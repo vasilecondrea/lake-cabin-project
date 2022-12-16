@@ -7,8 +7,8 @@ import boto3
 
 def lambda_handler(event, context):
     s3 = boto3.client("s3")
-    landing_zone_bucket = 'landing_zone_bucket'
-    processed_bucket = 'processed_bucket'
+    landing_zone_bucket = 'ingested-data-bucket-1'
+    processed_bucket = 'processed-data-bucket-1'
     list_objects = [s3.list_objects(Bucket=landing_zone_bucket)['Contents'][0]['Key']]
 
     lookup = create_lookup_from_json('currency-symbols.json', 'abbreviation', 'currency')
@@ -35,10 +35,15 @@ def lambda_handler(event, context):
             save_and_upload_data_frame_as_parquet_file(s3, processed_bucket, 'dim_counterparty.parquet', create_dim_counterparty(df, address_df))
         elif obj_name == 'payment.csv':
             save_and_upload_data_frame_as_parquet_file(s3, processed_bucket, 'fact_payment.parquet', create_fact_payment(df))
+            save_and_upload_data_frame_as_parquet_file(s3, processed_bucket, 'dim_date_payment.parquet', create_dim_date(df))
         elif obj_name == 'sales_order.csv':
             save_and_upload_data_frame_as_parquet_file(s3, processed_bucket, 'fact_sales_order.parquet', create_fact_sales_order(df))
+            save_and_upload_data_frame_as_parquet_file(s3, processed_bucket, 'dim_date_sales_order.parquet', create_dim_date(df))
         elif obj_name == 'purchase_order.csv':
             save_and_upload_data_frame_as_parquet_file(s3, processed_bucket, 'fact_purchase_orders.parquet', create_fact_purchase_orders(df))
+            save_and_upload_data_frame_as_parquet_file(s3, processed_bucket, 'dim_date_purchase_orders.parquet', create_dim_date(df))
+        elif obj_name == 'address.csv':
+            save_and_upload_data_frame_as_parquet_file(s3, processed_bucket, 'dim_location.parquet', create_dim_location(df))
 
     message = 'Finished processing!'
     return { 

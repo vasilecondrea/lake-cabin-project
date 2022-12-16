@@ -1,6 +1,6 @@
 from moto import mock_s3
 import boto3
-from Data_Manipulation.src.transformation import \
+from src.transformation import \
     retrieve_csv_from_s3_bucket, convert_csv_to_parquet_data_frame, create_dim_counterparty, create_dim_transaction, \
     create_dim_payment_type, delete_cols_from_df, create_dim_currency, create_lookup_from_json, create_dim_design, \
     create_dim_date, create_dim_location, create_dim_staff, create_fact_sales_order, create_fact_payment, \
@@ -13,21 +13,22 @@ import tempfile
 @mock_s3
 def test_retrieve_csv_from_s3_bucket():
 
-    file = "test_csv.csv"
+    file = "tests/test_csv.csv"
+    key = "test_csv.csv"
     bucket = "test_bucket"
 
     s3 = boto3.client("s3")
     s3.create_bucket(Bucket=bucket)
-    s3.upload_file(Filename=file, Bucket=bucket, Key=file)
+    s3.upload_file(Filename=file, Bucket=bucket, Key=key)
 
-    result = retrieve_csv_from_s3_bucket(s3, bucket, file)
+    result = retrieve_csv_from_s3_bucket(s3, bucket, key)
     
     filecmp.cmp(result.name, file)
 
 
 def test_convert_csv_to_parquet_data_frame():
     
-    file = 'test_csv.csv'
+    file = 'tests/test_csv.csv'
     
     df = pd.DataFrame({
         'sales_order_id': [1, 2],
@@ -68,7 +69,7 @@ def test_delete_cols_from_df():
 
 def test_create_lookup_from_json():
     
-    test_json_file = 'lookup_test.json'
+    test_json_file = 'tests/lookup_test.json'
     
     expected_lookup = {
         "ALL": "Albania Lek",
@@ -495,8 +496,8 @@ def test_lambda_handler():
 
     landing_bucket = 'ingested-data-bucket-1'
     processed_bucket = 'processed-data-bucket-1'
-    payment_file = "payment_type.csv"
-    currency_file = "currency.csv"
+    payment_file = "tests/payment_type.csv"
+    currency_file = "tests/currency.csv"
 
     s3 = boto3.client("s3")
     s3.create_bucket(Bucket=landing_bucket)
@@ -507,7 +508,3 @@ def test_lambda_handler():
     result = lambda_handler({}, object())
 
     assert result['message'] == 'Finished processing!'
-
-    # script to do the following:
-    # automate the upload of the transformation.py script
-    # creates new lambda function to invoke the transformation.py script

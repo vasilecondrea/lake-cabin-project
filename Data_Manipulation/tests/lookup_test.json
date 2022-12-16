@@ -1,0 +1,17 @@
+[
+    {
+        "currency": "Albania Lek",
+        "abbreviation": "ALL",
+        "symbol": "&#76;&#101;&#107;"
+      },
+      {
+        "currency": "Afghanistan Afghani",
+        "abbreviation": "AFN",
+        "symbol": "&#1547;"
+      },
+      {
+        "currency": "Argentina Peso",
+        "abbreviation": "ARS",
+        "symbol": "&#36;"
+      }
+]

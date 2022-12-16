@@ -1,0 +1,4 @@
+venv/*
+deployment/resources.json
+*.zip
+*.out

@@ -80,7 +80,7 @@ if [ "$IAM_ROLE" == "" ] || [ "$IAM_ROLE" == null ]; then
 else
     echo "IAM role already created, skipping..."
 fi
-wait
+sleep 10
 
 echo 'Attaching policies to IAM role...'
 aws iam attach-role-policy --policy-arn ${CLOUDWATCH_POLICY} --role-name lambda-role-${SUFFIX}
@@ -89,7 +89,7 @@ wait
 
 echo 'Creating lambda function...'
 FUNCTION=$(aws lambda create-function --function-name ${FUNCTION_NAME} --runtime python3.9 --role ${IAM_ROLE} --package-type Zip --handler test-ingestion.ingestion_handler --code S3Bucket=${CODE_BUCKET_NAME},S3Key=${FUNCTION_NAME}/test-ingestion.zip)
-wait
+sleep 10
 
 if [ "$EVENTBRIDGE_RULE" == "" ] || [ "$EVENTBRIDGE_RULE" == null ]; then
     echo "Creating eventbridge rule..."

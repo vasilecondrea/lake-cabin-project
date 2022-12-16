@@ -1,10 +1,14 @@
 import boto3
 import pg8000
+import datetime
+
+# Create an S3 client
+s3 = boto3.client('s3')
+
+# Create a CloudWatch client
+cloudwatch = boto3.client('cloudwatch')
 
 def create_s3_buckets():
-    # Create an S3 client
-    s3 = boto3.client('s3')
-
     # Create the two S3 buckets
     s3.create_bucket(Bucket='ingested-data-bucket-1')
     s3.create_bucket(Bucket='processed-data-bucket-1')
@@ -25,9 +29,6 @@ def ingest_database_to_s3():
     cursor.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")
     table_names = [row[0] for row in cursor.fetchall()]
 
-    # Create a new S3 client
-    s3 = boto3.client("s3")
-
     # Save the data from each table in a separate file in the "ingestion" S3 bucket
     for table_name in table_names:
         # Retrieve the data from the current table
@@ -45,6 +46,32 @@ def ingest_database_to_s3():
     cursor.close()
     conn.close()
 
+def lambda_handler(event, context):
+    # Log the start time of the function execution
+    cloudwatch.put_metric_data(
+        MetricData=[{
+            'MetricName': 'IngestionStartTime',
+            'Timestamp': datetime.datetime.utcnow(),
+            'Value': 1
+        }],
+        Namespace='Ingestion'
+    )
+
+    # Create the S3 buckets
+    create_s3_buckets()
+
+    # Ingest the database to S3
+    ingest_database_to_s3()
+
+    # Log the end time of the function execution
+    cloudwatch.put_metric_data(
+        MetricData=[{
+            'MetricName': 'IngestionEndTime',
+            'Timestamp': datetime.datetime.utcnow(),
+            'Value': 1
+        }],
+        Namespace='Ingestion'
+    )
 
 
 

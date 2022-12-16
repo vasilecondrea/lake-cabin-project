@@ -70,11 +70,11 @@ wait
 echo "Creating function deployment package..."
 cd src/ingestion-folder/
 zip ../../test-ingestion.zip test-ingestion.py >> deployment-log-${SUFFIX}.out
-cd ../
+cd ../../
 wait
 
 echo "Uploading the deployment package..."
-aws s3 cp test-ingestion.zip s3://${CODE_BUCKET_NAME}/${FUNCTION_NAME}/test-ingestion.zip >> deployment-log-${SUFFIX}.out
+aws s3 cp my-deployment-package.zip s3://${CODE_BUCKET_NAME}/${FUNCTION_NAME}/test-ingestion.zip >> deployment-log-${SUFFIX}.out
 wait
 
 echo "Setting up s3 read/write policy template..."
@@ -128,7 +128,7 @@ aws iam attach-role-policy --policy-arn ${S3_READ_WRITE_POLICY} --role-name lamb
 wait
 
 echo 'Creating lambda function...'
-FUNCTION=$(aws lambda create-function --function-name ${FUNCTION_NAME} --runtime python3.9 --role ${IAM_ROLE} --package-type Zip --handler python_ingestion_script.lambda_handler --code S3Bucket=${CODE_BUCKET_NAME},S3Key=${FUNCTION_NAME}/test-ingestion.zip)
+FUNCTION=$(aws lambda create-function --function-name ${FUNCTION_NAME} --runtime python3.9 --role ${IAM_ROLE} --package-type Zip --handler test-ingestion.lambda_handler --code S3Bucket=${CODE_BUCKET_NAME},S3Key=${FUNCTION_NAME}/test-ingestion.zip)
 sleep 10
 
 if [ "$EVENTBRIDGE_RULE" == "" ] || [ "$EVENTBRIDGE_RULE" == null ]; then

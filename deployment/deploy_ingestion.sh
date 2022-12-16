@@ -19,8 +19,8 @@ INGESTION_BUCKET=ingested-data-bucket-1
 wait
 
 echo "Generating AWS secret for source database credentials..."
-aws secretsmanager create-secret --name source-db-creds --secret-string file://__source_creds.json
-aws secretsmanager create-secret --name destination-db-creds --secret-string file://__destination_creds.json
+aws secretsmanager create-secret --name source-db-creds --secret-string file://db_creds_source.json
+aws secretsmanager create-secret --name destination-db-creds --secret-string file://db_creds_destination.json
 wait
 
 echo "Creating bucket code bucket '${CODE_BUCKET_NAME}'..."
@@ -29,7 +29,7 @@ wait
 
 echo "Creating function deployment package..."
 cd ../src/ingestion-folder/
-zip ../../deployment/__test-ingestion.zip __test-ingestion.py 
+zip ../../deployment/test-ingestion.zip test-ingestion.py 
 cd ../../deployment
 wait
 

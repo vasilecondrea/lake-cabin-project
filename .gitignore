@@ -1,14 +1,16 @@
+venv/
+deployment/resources.json
+*.zip
+*.out
+
 __pycache__/
 *.py[cod]
 *$py.class
-
 
 build/
 .coverage
 .coverage.*
 coverage.xml
 .pytest_cache/
-
-venv/
 
 .vscode

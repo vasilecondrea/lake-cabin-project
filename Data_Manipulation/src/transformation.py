@@ -10,6 +10,7 @@ def lambda_handler(event, context):
     landing_zone_bucket = 'landing_zone_bucket'
     processed_bucket = 'processed_bucket'
     list_objects = [s3.list_objects(Bucket=landing_zone_bucket)['Contents'][0]['Key']]
+
     lookup = create_lookup_from_json('currency-symbols.json', 'abbreviation', 'currency')
 
     for obj_name in list_objects:
@@ -44,6 +45,7 @@ def lambda_handler(event, context):
         'message' : message
     }
 
+
 def retrieve_csv_from_s3_bucket(s3, bucket, key):
     with tempfile.NamedTemporaryFile(delete=False) as f:
         f.name = key
@@ -59,10 +61,12 @@ def convert_csv_to_parquet_data_frame(file):
             df = pd.read_parquet(f.name)
             return df
 
+
 def delete_cols_from_df(df, col_list):
     for col in col_list:
         del df[col]
     return df
+
 
 def create_lookup_from_json(json_file, key, value):
     with open(json_file) as f:

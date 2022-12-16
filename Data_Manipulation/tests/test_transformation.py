@@ -489,6 +489,7 @@ def test_split_datetime_to_date_and_time():
     assert result['dates'] == expected_date
     assert result['times'] == expected_time
 
+
 @mock_s3
 def test_lambda_handler():
 
@@ -504,10 +505,3 @@ def test_lambda_handler():
     s3.upload_file(Filename=currency_file, Bucket=landing_bucket, Key=currency_file)
 
     lambda_handler({}, object())
-
-
-# ensure that we can read the file in the landing zone bucket
-# convert the parquet file into readable python format
-# prepare that data to be used for the processed bucket
-# convert back to parquet
-# store data in processed bucket

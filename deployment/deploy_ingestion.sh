@@ -27,6 +27,7 @@ if [ $SUFFIX == null ] || [ $SUFFIX == "" ]; then
 fi
 
 FUNCTION_NAME=data-ingestion-${SUFFIX}
+TRANSFORMATION_FUNCTION_NAME=transformation-${SUFFIX}
 AWS_ACCOUNT_ID=$(aws sts get-caller-identity | jq .Account | tr -d '"')
 INGESTION_BUCKET_NAME=ingestion-bucket-${SUFFIX}
 PROCESSED_BUCKET_NAME=processed-bucket-${SUFFIX}
@@ -82,8 +83,20 @@ zip ../../test-ingestion.zip function.py >> deployment-log-${SUFFIX}.out
 cd ../../
 wait
 
+# --------------------------------
+echo "Creating transformation function deployment package..."
+cd ../Data_Manipulation/src/
+zip ../../deployment..transformation.zip transformation.py >> deployment-log-${SUFFIX}.out
+cd ../../deployment
+wait
+
 echo "Uploading the deployment package..."
 aws s3 cp test-ingestion.zip s3://${CODE_BUCKET_NAME}/${FUNCTION_NAME}/test-ingestion.zip >> deployment-log-${SUFFIX}.out
+wait
+
+# --------------------------------
+echo "Uploading transformation deployment package..."
+aws s3 cp transformation.zip s3://${CODE_BUCKET_NAME}/${TRANSFORMATION_FUNCTION_NAME}/transformation.zip >> deployment-log-${SUFFIX}.out
 wait
 
 echo "Setting up s3 read/write policy template..."
@@ -138,7 +151,16 @@ aws iam attach-role-policy --policy-arn ${S3_READ_WRITE_POLICY} --role-name lamb
 wait
 
 echo 'Creating lambda function...'
-FUNCTION=$(aws lambda create-function --function-name ${FUNCTION_NAME} --runtime python3.9 --role ${IAM_ROLE} --package-type Zip --handler function.lambda_handler --code S3Bucket=${CODE_BUCKET_NAME},S3Key=${FUNCTION_NAME}/test-ingestion.zip)
+FUNCTION=$(aws lambda create-function --function-name ${FUNCTION_NAME} \
+--runtime python3.9 --role ${IAM_ROLE} --package-type Zip --handler function.lambda_handler \
+--code S3Bucket=${CODE_BUCKET_NAME},S3Key=${FUNCTION_NAME}/test-ingestion.zip)
+wait
+
+# ---------------------------------
+echo 'Creating transformation lambda function...'
+FUNCTION=$(aws lambda create-function --function-name ${TRANSFORMATION_FUNCTION_NAME} \
+--runtime python3.9 --role ${IAM_ROLE} --package-type Zip --handler transformation.lambda_handler \
+--code S3Bucket=${CODE_BUCKET_NAME},S3Key=${TRANSFORMATION_FUNCTION_NAME}/transformation.zip)
 wait
 
 if [ "$EVENTBRIDGE_RULE" == "" ] || [ "$EVENTBRIDGE_RULE" == null ]; then

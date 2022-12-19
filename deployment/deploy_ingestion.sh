@@ -28,8 +28,9 @@ fi
 
 FUNCTION_NAME=data-ingestion-${SUFFIX}
 AWS_ACCOUNT_ID=$(aws sts get-caller-identity | jq .Account | tr -d '"')
+INGESTION_BUCKET_NAME=ingestion-bucket-${SUFFIX}
+PROCESSED_BUCKET_NAME=processed-bucket-${SUFFIX}
 CODE_BUCKET_NAME=code-bucket-${SUFFIX}
-INGESTION_BUCKET=ingested-data-bucket-1
 wait
 
 # checks whether AWS source database credentials have already been retrieved 
@@ -63,22 +64,30 @@ else
 fi
 wait
 
+echo "Creating landing zone bucket '${INGESTION_BUCKET_NAME}'..."
+aws s3 mb s3://${INGESTION_BUCKET_NAME} >> deployment-log-${SUFFIX}.out
+wait
+
+echo "Creating processed zone bucket '${PROCESSED_BUCKET_NAME}'..."
+aws s3 mb s3://${PROCESSED_BUCKET_NAME} >> deployment-log-${SUFFIX}.out
+wait
+
 echo "Creating bucket code bucket '${CODE_BUCKET_NAME}'..."
 aws s3 mb s3://${CODE_BUCKET_NAME} >> deployment-log-${SUFFIX}.out
 wait
 
 echo "Creating function deployment package..."
 cd src/ingestion-folder/
-zip ../../test-ingestion.zip test-ingestion.py >> deployment-log-${SUFFIX}.out
+zip ../../test-ingestion.zip function.py >> deployment-log-${SUFFIX}.out
 cd ../../
 wait
 
 echo "Uploading the deployment package..."
-aws s3 cp my-deployment-package.zip s3://${CODE_BUCKET_NAME}/${FUNCTION_NAME}/test-ingestion.zip >> deployment-log-${SUFFIX}.out
+aws s3 cp test-ingestion.zip s3://${CODE_BUCKET_NAME}/${FUNCTION_NAME}/test-ingestion.zip >> deployment-log-${SUFFIX}.out
 wait
 
 echo "Setting up s3 read/write policy template..."
-S3_READ_WRITE_JSON=$(jq --arg i_bucket "${INGESTION_BUCKET}" \
+S3_READ_WRITE_JSON=$(jq --arg i_bucket "${INGESTION_BUCKET_NAME}" \
 '.Statement[0].Resource[0] |= "arn:aws:s3:::" + $i_bucket + "/*"' templates/s3_ingestion_policy_template.json)
 
 echo "Setting up cloudwatch log policy template..."
@@ -128,8 +137,8 @@ aws iam attach-role-policy --policy-arn ${S3_READ_WRITE_POLICY} --role-name lamb
 wait
 
 echo 'Creating lambda function...'
-FUNCTION=$(aws lambda create-function --function-name ${FUNCTION_NAME} --runtime python3.9 --role ${IAM_ROLE} --package-type Zip --handler test-ingestion.lambda_handler --code S3Bucket=${CODE_BUCKET_NAME},S3Key=${FUNCTION_NAME}/test-ingestion.zip)
-sleep 10
+FUNCTION=$(aws lambda create-function --function-name ${FUNCTION_NAME} --runtime python3.9 --role ${IAM_ROLE} --package-type Zip --handler function.lambda_handler --code S3Bucket=${CODE_BUCKET_NAME},S3Key=${FUNCTION_NAME}/test-ingestion.zip)
+wait
 
 if [ "$EVENTBRIDGE_RULE" == "" ] || [ "$EVENTBRIDGE_RULE" == null ]; then
     echo "Creating eventbridge rule..."
@@ -147,7 +156,7 @@ echo "Giving permission to eventbridge rule to invoke lambda function..."
 aws lambda add-permission --function-name ${FUNCTION_NAME} --principal events.amazonaws.com --statement-id eventbridge-invoke-${SUFFIX} --action "lambda:InvokeFunction" --source-arn ${EVENTBRIDGE_RULE} >> deployment-log-${SUFFIX}.out
 wait
 
-TARGET_JSON=$(jq --arg aws_id "${AWS_ACCOUNT_ID}" --arg func_name "${FUNCTION_NAME}" '.Arn |= "arn:aws:lambda:us-east-1:" + $aws_id + ":function:" + $func_name' templates/eventbridge_targets.json)
+TARGET_JSON=$(jq --arg aws_id "${AWS_ACCOUNT_ID}" --arg func_name "${FUNCTION_NAME}" --arg ingest_bucket "${INGESTION_BUCKET_NAME}" '.Arn |= "arn:aws:lambda:us-east-1:" + $aws_id + ":function:" + $func_name | .Input |= "\"" + $ingest_bucket + "\""' templates/eventbridge_targets.json)
 echo "Adding lambda function as target for eventbridge rule..."
 aws events put-targets --rule ingestion-rule-${SUFFIX} --targets "[${TARGET_JSON}]" >> deployment-log-${SUFFIX}.out
 

@@ -87,8 +87,9 @@ aws s3 cp test-ingestion.zip s3://${CODE_BUCKET_NAME}/${FUNCTION_NAME}/test-inge
 wait
 
 echo "Setting up s3 read/write policy template..."
-S3_READ_WRITE_JSON=$(jq --arg i_bucket "${INGESTION_BUCKET_NAME}" \
-'.Statement[0].Resource[0] |= "arn:aws:s3:::" + $i_bucket + "/*"' templates/s3_ingestion_policy_template.json)
+S3_READ_WRITE_JSON=$(jq --arg i_bucket "arn:aws:s3:::${INGESTION_BUCKET_NAME}/*" \
+'.Statement[0].Resource = [$i_bucket]' templates/s3_ingestion_policy_template.json |\
+jq --arg p_bucket "arn:aws:s3:::${PROCESSED_BUCKET_NAME}/*" '.Statement[0].Resource += [$p_bucket]')
 
 echo "Setting up cloudwatch log policy template..."
 CLOUD_WATCH_JSON=$(jq --arg aws_id "${AWS_ACCOUNT_ID}" --arg func_name "${FUNCTION_NAME}" \

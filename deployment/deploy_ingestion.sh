@@ -85,9 +85,17 @@ wait
 
 # --------------------------------
 echo "Creating transformation function deployment package..."
-cd ../Data_Manipulation/src/
-zip ../../deployment..transformation.zip transformation.py >> deployment-log-${SUFFIX}.out
-cd ../../deployment
+# cd ../Data_Manipulation/src/data_transformation_code/package
+# zip -r ../../../deployment/transformation.zip . >> deployment-log-${SUFFIX}.out
+# cd ../
+# zip -r transformation.zip transformation.py
+# cd ../../../deployment
+# zip transformation.zip transformation.py
+cd ../Data_Manipulation/src/data_transformation_code/package 
+zip -r ../transformation.zip . >> deployment-log-${SUFFIX}.out
+cd ../
+zip transformation.zip transformation.py
+cd ../../../deployment
 wait
 
 echo "Uploading the deployment package..."
@@ -96,7 +104,7 @@ wait
 
 # --------------------------------
 echo "Uploading transformation deployment package..."
-aws s3 cp transformation.zip s3://${CODE_BUCKET_NAME}/${TRANSFORMATION_FUNCTION_NAME}/transformation.zip >> deployment-log-${SUFFIX}.out
+aws s3 cp ../Data_Manipulation/src/data_transformation_code/transformation.zip s3://${CODE_BUCKET_NAME}/${TRANSFORMATION_FUNCTION_NAME}/transformation.zip >> deployment-log-${SUFFIX}.out
 wait
 
 echo "Setting up s3 read/write policy template..."

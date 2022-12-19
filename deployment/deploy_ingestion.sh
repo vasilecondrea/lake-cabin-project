@@ -78,7 +78,7 @@ wait
 
 echo "Creating function deployment package..."
 cd src/ingestion-folder/
-zip ../../test-ingestion.zip test-ingestion.py >> deployment-log-${SUFFIX}.out
+zip ../../test-ingestion.zip function.py >> deployment-log-${SUFFIX}.out
 cd ../../
 wait
 

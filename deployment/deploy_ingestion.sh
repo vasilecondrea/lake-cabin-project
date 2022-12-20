@@ -94,7 +94,7 @@ echo "Creating transformation function deployment package..."
 cd ../Data_Manipulation/src/data_transformation_code/package 
 zip -r ../transformation.zip . >> deployment-log-${SUFFIX}.out
 cd ../
-zip transformation.zip transformation.py
+zip transformation.zip transformation.py currency-symbols.json
 cd ../../../deployment
 wait
 
@@ -110,7 +110,7 @@ wait
 echo "Setting up s3 read/write policy template..."
 S3_READ_WRITE_JSON=$(jq --arg i_bucket "arn:aws:s3:::${INGESTION_BUCKET_NAME}/*" \
 '.Statement[0].Resource = [$i_bucket]' templates/s3_ingestion_policy_template.json |\
-jq --arg p_bucket "arn:aws:s3:::${PROCESSED_BUCKET_NAME}/*" '.Statement[0].Resource += [$p_bucket]')
+jq --arg p_bucket "arn:aws:s3:::${PROCESSED_BUCKET_NAME}/*" '.Statement[0].Resource += [$p_bucket]' | jq --arg i_buck "arn:aws:s3:::${INGESTION_BUCKET_NAME}" '.Statement[0].Resource += [$i_buck]' | jq --arg p_buck "arn:aws:s3:::${PROCESSED_BUCKET_NAME}" '.Statement[0].Resource += [$p_buck]')
 
 echo "Setting up cloudwatch log policy template..."
 CLOUD_WATCH_JSON=$(jq --arg aws_id "${AWS_ACCOUNT_ID}" --arg func_name "${FUNCTION_NAME}" \

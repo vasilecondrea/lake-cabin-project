@@ -4,7 +4,7 @@ def lambda_handler(event, context):
     pass
 
 
-def list_updated_tables(processed_bucket):
+def list_tables(processed_bucket):
     pass
 
 

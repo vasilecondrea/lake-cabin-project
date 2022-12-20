@@ -1,3 +1,6 @@
+import boto3
+import moto
+import unittest
 from moto import mock_s3
 from unittest import TestCase
 from src.python_ingestion_script import create_s3_buckets
@@ -52,9 +55,6 @@ class TestCreateS3BucketsAndIngestDatabaseToS3(TestCase):
         self.assertIn("table2.csv", bucket["Contents"])
         self.assertIn("table3.csv", bucket["Contents"])
 
-import boto3
-import moto
-import unittest
 
 class TestLambdaHandler(unittest.TestCase):
     @moto.mock_s3

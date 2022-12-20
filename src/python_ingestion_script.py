@@ -17,7 +17,7 @@ def create_s3_buckets():
 def ingest_database_to_s3():
     # Retrieve the database connection details from AWS Secrets Manager
     secrets_manager_client = boto3.client("secretsmanager")
-    secret_value_response = secrets_manager_client.get_secret_value(SecretId="Source Database Creds") #Change this to match
+    secret_value_response = secrets_manager_client.get_secret_value(SecretId="db-creds-source") #Change this to match
     secret_dict = json.loads(secret_value_response["SecretString"])
 
     host = secret_dict["host"]

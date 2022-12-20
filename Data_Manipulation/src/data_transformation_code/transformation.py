@@ -6,6 +6,7 @@ import math
 import boto3
 
 def lambda_handler(event, context):
+    print(event)
     s3 = boto3.client("s3")
     landing_zone_bucket = 'ingested-data-bucket-1'
     processed_bucket = 'processed-data-bucket-1'

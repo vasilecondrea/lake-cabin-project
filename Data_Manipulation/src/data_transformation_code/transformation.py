@@ -5,8 +5,10 @@ from datetime import datetime
 import math
 import boto3
 import os
+import pyarrow
 
 def lambda_handler(event, context):
+
     s3 = boto3.client("s3")
     landing_zone_bucket = event['ingested_bucket']
     processed_bucket = event['processed_bucket']
@@ -76,8 +78,8 @@ def delete_cols_from_df(df, col_list):
 
 def create_lookup_from_json(json_file, key, value):
     configPath = os.environ['LAMBDA_TASK_ROOT'] + "/" + json_file
-    print(dir(configPath))
-    print(configPath['return_value'])
+    # print(dir(configPath))
+    # print(configPath['return_value'])
     with open(configPath) as f:
         print(f)
         data = json.load(f)

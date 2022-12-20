@@ -1,6 +1,8 @@
 
 import boto3
 import botocore
+import pandas as pd
+import json
 
 
 # s3 = boto3.client("s3")
@@ -35,12 +37,27 @@ def load_table_from_name(s3, processed_bucket, table_name):
     if type(table_name) != str:
         raise (ValueError)
 
-    response = s3.get_object(Bucket=processed_bucket, Key=table_name)
+    df = pd.read_parquet(f's3://{processed_bucket}/{table_name}')
 
-    print(response)
+    return df
 
 
-# def
+def get_db_credentials(secretsmanager):
+    if not isinstance(secretsmanager, botocore.client.BaseClient):
+        raise (ValueError)
 
-def upload_to_OLAP():
-    pass
+    response = secretsmanager.get_secret_value('db-creds-destination')
+
+    creds_json = json.loads(response)
+
+    return creds_json
+
+
+def upload_to_OLAP(rds, dataframe, db_credentials):
+
+    if type(db_credentials) != dict:
+        raise (ValueError)
+    if not isinstance(dataframe, pd.DataFrame):
+        raise (ValueError)
+    if not isinstance(rds, botocore.client.BaseClient):
+        raise (ValueError)

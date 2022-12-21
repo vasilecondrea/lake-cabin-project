@@ -1,10 +1,13 @@
 from moto import mock_s3, mock_secretsmanager
 import moto
 import boto3
-from datetime import datetime, timedelta
 from unittest.mock import MagicMock
+from unittest import mock
 import pytest
 import pandas as pd
+import sqlalchemy
+import testing.postgresql
+from sqlalchemy import create_engine
 
 
 from OLAP_load.script import lambda_handler, list_tables, load_table_from_name, upload_to_OLAP, get_db_credentials
@@ -195,9 +198,23 @@ def test_get_db_credentials_contains_relevant_keys():
 def test_upload_to_OLAP_raises_value_errors():
     db_credentials = {"host": "changeme", "database": "changeme", "schema": "changeme",
                       "port": "changeme", "username": "changeme", "password": "changeme"}
+
     with pytest.raises(ValueError):
-        upload_to_OLAP(boto3.client("rds"), '', '')
+        upload_to_OLAP('', '')
     with pytest.raises(ValueError):
-        upload_to_OLAP(boto3.client("rds"), 2, db_credentials)
-    with pytest.raises(ValueError):
-        upload_to_OLAP(1, pd.DataFrame(), db_credentials)
+        upload_to_OLAP(2, db_credentials)
+
+
+@mock.patch('sqlalchemy.create_engine')
+def test_upload_to_OLAP_calls_createEngine_with_db_credentials(mock_create_engine):
+
+    df = pd.DataFrame()
+
+    db_credentials = {"host": "changeme", "database": "changeme", "schema": "changeme",
+                      "port": "changeme", "username": "changeme", "password": "changeme"}
+    db_url = f"postgresql+pg8000://{db_credentials['username']}:{db_credentials['password']}@{db_credentials['host']}:{db_credentials['port']}/{db_credentials['database']}?currentSchema={db_credentials['schema']}"
+
+    upload_to_OLAP(df, db_credentials)
+
+    sqlalchemy.create_engine.assert_called_with(db_url)
+    pass

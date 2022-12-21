@@ -3,6 +3,8 @@ import boto3
 import botocore
 import pandas as pd
 import json
+import sqlalchemy
+from sqlalchemy import create_engine
 
 
 # s3 = boto3.client("s3")
@@ -53,11 +55,14 @@ def get_db_credentials(secretsmanager):
     return creds_json
 
 
-def upload_to_OLAP(rds, dataframe, db_credentials):
+def upload_to_OLAP(dataframe, db_credentials):
 
-    if type(db_credentials) != dict:
+    if type(db_credentials) != dict or 'host' not in db_credentials or 'database' not in db_credentials or 'schema' not in db_credentials or 'port' not in db_credentials or 'username' not in db_credentials or 'password' not in db_credentials:
         raise (ValueError)
+
     if not isinstance(dataframe, pd.DataFrame):
         raise (ValueError)
-    if not isinstance(rds, botocore.client.BaseClient):
-        raise (ValueError)
+
+    db_url = f"postgresql+pg8000://{db_credentials['username']}:{db_credentials['password']}@{db_credentials['host']}:{db_credentials['port']}/{db_credentials['database']}?currentSchema={db_credentials['schema']}"
+
+    engine = sqlalchemy.create_engine(db_url)

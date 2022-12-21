@@ -5,7 +5,6 @@ from datetime import datetime
 import math
 import boto3
 import os
-import pyarrow
 
 def lambda_handler(event, context):
 
@@ -64,9 +63,9 @@ def retrieve_csv_from_s3_bucket(s3, bucket, key):
 def convert_csv_to_parquet_data_frame(file):
     with open(file.name, 'r') as orig_f:
         with tempfile.NamedTemporaryFile(delete=False) as f:
-            df = pd.read_csv(orig_f, engine="pyarrow")
-            df.to_parquet(f.name, engine="pyarrow")
-            df = pd.read_parquet(f.name, engine="pyarrow")
+            df = pd.read_csv(orig_f)
+            df.to_parquet(f.name)
+            df = pd.read_parquet(f.name)
             return df
 
 
@@ -78,8 +77,7 @@ def delete_cols_from_df(df, col_list):
 
 def create_lookup_from_json(json_file, key, value):
     configPath = os.environ['LAMBDA_TASK_ROOT'] + "/" + json_file
-    # print(dir(configPath))
-    # print(configPath['return_value'])
+
     with open(configPath) as f:
         print(f)
         data = json.load(f)
@@ -97,11 +95,13 @@ def create_dim_counterparty(counterparty_df, address_df):
     dim_counterparty_df = delete_cols_from_df(dim_counterparty_df, cols_to_delete)
 
     address_df_copy = address_df.copy()
-    address_df_copy = address_df_copy.rename(columns={'address_id':'legal_address_id'})
+    address_df_copy = address_df_copy.rename(columns={'address_id':'legal_address_id', 'address_line_1':'counterparty_legal_address_line_1',\
+        'address_line_2':'counterparty_legal_address_line_2', 'district':'counterparty_legal_district', 'city':'counterparty_legal_city',\
+        'postal_code':'counterparty_legal_postal_code', 'country':'counterparty_legal_country', 'phone':'counterparty_legal_phone_number'})
     cols_to_delete = ['created_at', 'last_updated']
     address_df_copy = delete_cols_from_df(address_df_copy, cols_to_delete)
 
-    result = pd.merge(dim_counterparty_df, address_df_copy, on='legal_address_id', engine="pyarrow")
+    result = pd.merge(dim_counterparty_df, address_df_copy, on='legal_address_id')
     result = delete_cols_from_df(result, ['legal_address_id']) 
 
     return result
@@ -196,10 +196,10 @@ def create_dim_date(sale_related_df):
                     'day_name': [time_datetime.strftime("%A")],
                     'month_name': [time_datetime.strftime("%B")],
                     'quarter': [math.ceil(time_datetime.month / 3)]
-                }, index=index, engine="pyarrow")
+                }, index=index)
 
                 frames = [dim_date, df_to_add]
-                dim_date = pd.concat(frames, engine="pyarrow")
+                dim_date = pd.concat(frames)
                 index[0] += 1
 
     dim_date = dim_date.astype({'year':'int', 'month':'int', 'day':'int', 'day_of_week':'int', 'quarter':'int'})
@@ -210,6 +210,8 @@ def create_dim_location(address_df):
     dim_location = address_df.copy()
 
     cols_to_delete = ['created_at', 'last_updated']
+    dim_location = dim_location.rename(columns={'address_id':'location_id'})
+
     dim_location = delete_cols_from_df(dim_location, cols_to_delete)
 
     return dim_location
@@ -225,7 +227,7 @@ def create_dim_staff(staff_df, department_df):
     cols_to_delete = ['manager', 'created_at', 'last_updated']
     department_df_copy = delete_cols_from_df(department_df_copy, cols_to_delete)
 
-    result = pd.merge(dim_staff, department_df_copy, on='department_id', engine="pyarrow")
+    result = pd.merge(dim_staff, department_df_copy, on='department_id')
     result = delete_cols_from_df(result, ['department_id']) 
 
     return result[['staff_id', 'first_name', 'last_name', 'department_name', 'location', 'email_address']]

@@ -117,13 +117,13 @@ def test_modify_data_for_dim_counterparty_table():
     dim_counterparty_df = pd.DataFrame({
         'counterparty_id': [1, 2],
         'counterparty_legal_name': ['Fahey and Sons', 'Leannon, Predovic and Morar'],
-        'address_line_1': ['605 Haskell Trafficway', '079 Horacio Landing'],
-        'address_line_2': ['Axel Freeway', None],
-        'district': [None, None],
-        'city': ['East Bobbie', 'Utica'],
-        'postal_code': ['88253-4257', '93045'],
-        'country':['Heard Island and McDonald Islands', 'Austria'],
-        'phone':['9687 937447', '7772 084705']
+        'counterparty_legal_address_line_1': ['605 Haskell Trafficway', '079 Horacio Landing'],
+        'counterparty_legal_address_line_2': ['Axel Freeway', None],
+        'counterparty_legal_district': [None, None],
+        'counterparty_legal_city': ['East Bobbie', 'Utica'],
+        'counterparty_legal_postal_code': ['88253-4257', '93045'],
+        'counterparty_legal_country':['Heard Island and McDonald Islands', 'Austria'],
+        'counterparty_legal_phone_number':['9687 937447', '7772 084705']
     })
 
     result = create_dim_counterparty(counterparty_df, address_df)
@@ -303,7 +303,7 @@ def test_modify_data_for_dim_location():
     })
 
     dim_location_df = pd.DataFrame({
-        'address_id': [15, 28],
+        'location_id': [15, 28],
         'address_line_1': ['605 Haskell Trafficway', '079 Horacio Landing'],
         'address_line_2': ['Axel Freeway', None],
         'district': [None, None],

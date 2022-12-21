@@ -154,6 +154,9 @@ else
 fi
 wait
 
+echo "Increasing Lambda timeout..."
+aws lambda update-function-configuration --function-name ${FUNCTION_NAME} --timeout 30 >> deployment-log-${SUFFIX}.out
+
 echo "Giving permission to eventbridge rule to invoke lambda function..."
 aws lambda add-permission --function-name ${FUNCTION_NAME} --principal events.amazonaws.com --statement-id eventbridge-invoke-${SUFFIX} --action "lambda:InvokeFunction" --source-arn ${EVENTBRIDGE_RULE} >> deployment-log-${SUFFIX}.out
 wait

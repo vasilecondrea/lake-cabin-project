@@ -19,7 +19,17 @@
         {
             "Effect": "Allow",
             "Action": "secretsmanager:GetSecretValue",
-            "Resource": "arn:aws:secretsmanager:us-east-1:758779978501:secret:db-creds-source-JUkBiu"
+            "Resource": "arn:aws:secretsmanager:us-east-1:540134346788:secret:db-creds-source-TBMvcz"
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "logs:Describe*",
+                "logs:Get*"
+                ],
+            "Resource": [
+                "arn:aws:logs:us-east-1:540134346788:log-group:*"
+            ]
         }
     ]
 }

@@ -31,6 +31,20 @@ def ingest_database_to_s3(bucket_name):
     )
     cursor = conn.cursor()
 
+    logs = boto3.client('logs')
+    log_groups = logs.describe_log_groups()
+    log_group = log_groups['logGroups'][-1]['logGroupName']
+
+    log_streams = logs.describe_log_streams(logGroupName=log_group)
+    log_stream = log_streams['logStreams'][-1]['logStreamName']
+    log_events = logs.get_log_events(logGroupName=log_group, logStreamName=log_stream)
+
+    first_ingestion = True
+    for event in log_events['events']:
+        if "END RequestId:" in event['message']:
+            first_ingestion = False
+            break
+
     try:
         # Retrieve all table names from the totesys database
         cursor.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")
@@ -42,7 +56,7 @@ def ingest_database_to_s3(bucket_name):
             cursor.execute(f"SELECT max(last_updated) FROM {table_name}")
             last_update = cursor.fetchone()[0]
             # If the table has been modified, retrieve and save the updated data
-            if last_update > datetime.datetime.utcnow() - datetime.timedelta(hours=2): #Change this to what you decide on
+            if first_ingestion or last_update > datetime.datetime.utcnow() - datetime.timedelta(minutes=5): #Change this to what you decide on
                 # Retrieve the data from the current table
                 cursor.execute(f"SELECT * FROM {table_name}")
                 rows = cursor.fetchall()

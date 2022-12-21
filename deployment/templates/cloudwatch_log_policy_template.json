@@ -15,6 +15,11 @@
             "Resource": [
                 "arn:aws:logs:us-east-1:INSERT_ACCOUNT_ID_HERE:log-group:/aws/lambda/LAMBDA_FUNCTION_NAME_HERE:*"
             ]
+        },
+        {
+            "Effect": "Allow",
+            "Action": "secretsmanager:GetSecretValue",
+            "Resource": "arn:aws:secretsmanager:us-east-1:758779978501:secret:db-creds-source-JUkBiu"
         }
     ]
 }

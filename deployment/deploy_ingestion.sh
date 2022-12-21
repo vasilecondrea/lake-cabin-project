@@ -77,7 +77,9 @@ aws s3 mb s3://${CODE_BUCKET_NAME} >> deployment-log-${SUFFIX}.out
 wait
 
 echo "Creating function deployment package..."
-cd src/ingestion-folder/
+cd src/ingestion-folder/package
+zip -r ../../../test-ingestion.zip . >> deployment-log-${SUFFIX}.out
+cd ../
 zip ../../test-ingestion.zip function.py >> deployment-log-${SUFFIX}.out
 cd ../../
 wait
@@ -156,7 +158,7 @@ echo "Giving permission to eventbridge rule to invoke lambda function..."
 aws lambda add-permission --function-name ${FUNCTION_NAME} --principal events.amazonaws.com --statement-id eventbridge-invoke-${SUFFIX} --action "lambda:InvokeFunction" --source-arn ${EVENTBRIDGE_RULE} >> deployment-log-${SUFFIX}.out
 wait
 
-TARGET_JSON=$(jq --arg aws_id "${AWS_ACCOUNT_ID}" --arg func_name "${FUNCTION_NAME}" --arg ingest_bucket "${INGESTION_BUCKET_NAME}" '.Arn |= "arn:aws:lambda:us-east-1:" + $aws_id + ":function:" + $func_name | .Input |= "\"" + $ingest_bucket + "\""' templates/eventbridge_targets.json)
+TARGET_JSON=$(jq --arg aws_id "${AWS_ACCOUNT_ID}" --arg func_name "${FUNCTION_NAME}" --arg ingest_bucket "${INGESTION_BUCKET_NAME}" '.Arn |= "arn:aws:lambda:us-east-1:" + $aws_id + ":function:" + $func_name | .Input |= "{\"ingested_bucket\":\"" + $ingest_bucket + "\"}"' templates/eventbridge_targets.json)
 echo "Adding lambda function as target for eventbridge rule..."
 aws events put-targets --rule ingestion-rule-${SUFFIX} --targets "[${TARGET_JSON}]" >> deployment-log-${SUFFIX}.out
 

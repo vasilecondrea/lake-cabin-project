@@ -57,12 +57,19 @@ def ingest_database_to_s3(bucket_name):
             last_update = cursor.fetchone()[0]
             # If the table has been modified, retrieve and save the updated data
             if first_ingestion or last_update > datetime.datetime.utcnow() - datetime.timedelta(minutes=5): #Change this to what you decide on
+                # Retrieve column names from the current table
+                cursor.execute(f"SELECT column_name FROM (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = N'{table_name}') AS column_schema")
+                column_names = cursor.fetchall()
+
                 # Retrieve the data from the current table
                 cursor.execute(f"SELECT * FROM {table_name}")
                 rows = cursor.fetchall()
 
                 # Save the data to a CSV file in the "ingestion" S3 bucket
                 with open(f"/tmp/{table_name}.csv", "w") as file:
+                    file.write(",".join([column_name[0] for column_name in column_names]))
+                    file.write("\n")
+                    
                     for row in rows:
                         file.write(",".join([str(cell) for cell in row]))
                         file.write("\n")

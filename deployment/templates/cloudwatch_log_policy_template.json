@@ -19,7 +19,7 @@
         {
             "Effect": "Allow",
             "Action": "secretsmanager:GetSecretValue",
-            "Resource": "arn:aws:secretsmanager:us-east-1:540134346788:secret:db-creds-source-TBMvcz"
+            "Resource": "INSERT_SECRET_ARN_HERE"
         },
         {
             "Effect": "Allow",
@@ -27,9 +27,7 @@
                 "logs:Describe*",
                 "logs:Get*"
                 ],
-            "Resource": [
-                "arn:aws:logs:us-east-1:540134346788:log-group:*"
-            ]
+            "Resource": "arn:aws:logs:us-east-1:INSERT_ACCOUNT_ID_HERE:log-group:*"
         }
     ]
 }

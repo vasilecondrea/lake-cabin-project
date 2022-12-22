@@ -2,6 +2,7 @@ import boto3
 import pg8000
 import datetime
 import json
+import time
 
 # Create an S3 client
 s3 = boto3.client('s3')
@@ -36,12 +37,12 @@ def ingest_database_to_s3(bucket_name):
     log_group = log_groups['logGroups'][-1]['logGroupName']
 
     log_streams = logs.describe_log_streams(logGroupName=log_group)
-    log_stream = log_streams['logStreams'][-1]['logStreamName']
+    log_stream = log_streams['logStreams'][0]['logStreamName']
     log_events = logs.get_log_events(logGroupName=log_group, logStreamName=log_stream)
 
     first_ingestion = True
     for event in log_events['events']:
-        if "END RequestId:" in event['message']:
+        if "[INGESTION] Ingestion completed" in event['message']:
             first_ingestion = False
             break
 
@@ -57,14 +58,21 @@ def ingest_database_to_s3(bucket_name):
             last_update = cursor.fetchone()[0]
             # If the table has been modified, retrieve and save the updated data
             if first_ingestion or last_update > datetime.datetime.utcnow() - datetime.timedelta(minutes=5): #Change this to what you decide on
+                # Retrieve column names from the current table
+                cursor.execute(f"SELECT column_name FROM (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = N'{table_name}') AS column_schema")
+                column_names = cursor.fetchall()
+
                 # Retrieve the data from the current table
                 cursor.execute(f"SELECT * FROM {table_name}")
                 rows = cursor.fetchall()
 
                 # Save the data to a CSV file in the "ingestion" S3 bucket
                 with open(f"/tmp/{table_name}.csv", "w") as file:
+                    file.write(",".join([column_name[0] for column_name in column_names]))
+                    file.write("\n")
+                    
                     for row in rows:
-                        file.write(",".join([str(cell) for cell in row]))
+                        file.write(",".join(["\"" + str(cell) + "\"" if "," in str(cell) else str(cell) for cell in row]))
                         file.write("\n")
                 s3.upload_file(f"/tmp/{table_name}.csv", bucket_name, f"{table_name}.csv")
                 print(f'[INGESTION] MODIFIED: {table_name} was last modified at {last_update}')
@@ -84,6 +92,9 @@ def ingest_database_to_s3(bucket_name):
 def lambda_handler(event, context):
     # Log the start time of the function execution
     print(f'[INGESTION] Ingestion started')
+
+    # Allow time for cloudwatch log to be created
+    time.sleep(15)
 
     # Ingest the database to S3
     ingest_database_to_s3(event['ingested_bucket'])

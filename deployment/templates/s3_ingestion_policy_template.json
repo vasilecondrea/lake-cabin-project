@@ -5,7 +5,7 @@
             "Sid": "VisualEditor0",
             "Effect": "Allow",
             "Action": [
-                "s3:*Object"
+                "s3:*"
             ],
             "Resource": [
                 "insert_ingestion_bucket_arn_here"

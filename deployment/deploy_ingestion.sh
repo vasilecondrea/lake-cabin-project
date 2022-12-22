@@ -197,7 +197,6 @@ wait
 
 TARGET_JSON=$(jq --arg aws_id "${AWS_ACCOUNT_ID}" --arg func_name "${FUNCTION_NAME}" --arg ingest_bucket "${INGESTION_BUCKET_NAME}" --arg process_bucket "${PROCESSED_BUCKET_NAME}" '.Arn |= "arn:aws:lambda:us-east-1:" + $aws_id + ":function:" + $func_name | .Input = "{\"ingested_bucket\":" + "\"" + $ingest_bucket + "\"" + ", \"processed_bucket\":" + "\"" + $process_bucket + "\"" + "}"' templates/eventbridge_targets.json)
 
-# currently overwrites eventbridge_target.json
 TRANSFORMATION_TARGET_JSON=$(jq --arg aws_id "${AWS_ACCOUNT_ID}" --arg func_name "${TRANSFORMATION_FUNCTION_NAME}" --arg ingest_bucket "${INGESTION_BUCKET_NAME}" --arg process_bucket "${PROCESSED_BUCKET_NAME}" '.Arn |= "arn:aws:lambda:us-east-1:" + $aws_id + ":function:" + $func_name | .Input = "{\"ingested_bucket\":" + "\"" + $ingest_bucket + "\"" + ", \"processed_bucket\":" + "\"" + $process_bucket + "\"" + "}"' templates/eventbridge_targets.json)
 
 # ALT TARGET JSON  --arg transformation_func_name "${TRANSFORMATION_FUNCTION_NAME}" .... Arn |= "{\"ingestion_arn\":" + \"arn:aws:lambda:us-east-1:\" + "\"" + $aws_id + "\"" + \":function:\" + "\"" + $func_name + "\"" ", \"transformation_arn:\" + \"arn:aws:lambda:us-east-1:\" + "\"" + $aws_id + "\"" + \":function:\" + "\"" + $transformation_func_name + "\"" + "}"

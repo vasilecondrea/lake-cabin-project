@@ -1,0 +1,13 @@
+name: deploy-ingestion-bash-script
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  say-greeting:
+    runs-on: ubuntu-latest
+    steps:
+      - name: greet-user
+        run: echo 'This is the project of Team lake-cabin!'

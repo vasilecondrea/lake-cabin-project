@@ -72,7 +72,7 @@ def ingest_database_to_s3(bucket_name):
                     file.write("\n")
                     
                     for row in rows:
-                        file.write(",".join([str(cell) for cell in row]))
+                        file.write(",".join(["\"" + str(cell) + "\"" if "," in str(cell) else str(cell) for cell in row]))
                         file.write("\n")
                 s3.upload_file(f"/tmp/{table_name}.csv", bucket_name, f"{table_name}.csv")
                 print(f'[INGESTION] MODIFIED: {table_name} was last modified at {last_update}')
@@ -94,7 +94,7 @@ def lambda_handler(event, context):
     print(f'[INGESTION] Ingestion started')
 
     # Allow time for cloudwatch log to be created
-    time.sleep(10)
+    time.sleep(15)
 
     # Ingest the database to S3
     ingest_database_to_s3(event['ingested_bucket'])

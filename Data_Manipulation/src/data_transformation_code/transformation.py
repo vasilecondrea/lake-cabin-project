@@ -11,11 +11,12 @@ def lambda_handler(event, context):
     s3 = boto3.client("s3")
     landing_zone_bucket = event['ingested_bucket']
     processed_bucket = event['processed_bucket']
-    list_objects = [s3.list_objects(Bucket=landing_zone_bucket)['Contents'][0]['Key']]
+    list_objects = [object['Key'] for object in s3.list_objects(Bucket=landing_zone_bucket)['Contents']]
 
     lookup = create_lookup_from_json('currency-symbols.json', 'abbreviation', 'currency')
 
     for obj_name in list_objects:
+        print("Checking ", obj_name)
         file = retrieve_csv_from_s3_bucket(s3, landing_zone_bucket, obj_name)
         df = convert_csv_to_parquet_data_frame(file)
 

@@ -177,9 +177,14 @@ if [ "$EVENTBRIDGE_RULE" == "" ] || [ "$EVENTBRIDGE_RULE" == null ]; then
     echo "Creating eventbridge rule..."
 
     EVENTBRIDGE_RULE=$(aws events put-rule --name ingestion-rule-${SUFFIX} --schedule-expression "rate(5 minutes)" | jq .RuleArn | tr -d '"')
+    
+    TRANSFORMATION_EVENTBRIDGE_RULE=$(aws events put-rule --name transformation-rule-${SUFFIX} --schedule-expression "rate(5 minutes)" | jq .RuleArn | tr -d '"')
 
     RESOURCES_JSON=$(cat resources.json)
     jq --arg policy "${EVENTBRIDGE_RULE}" '.eventbridge_rule |= $policy' <<< $RESOURCES_JSON > resources.json
+    jq --arg policy "${TRANSFORMATION_EVENTBRIDGE_RULE}" '.transformation_eventbridge_rule |= $policy' <<< $RESOURCES_JSON > resources.json
+    
+    # ALT COMMAND jq --arg ingestion-policy "${EVENTBRIDGE_RULE}" --arg transformation-policy "${TRANSFORMATION_EVENTBRIDGE_RULE}" '.eventbridge_rule |= {"ingestion_rule":$policy,"transformation_rule":$policy_two}' resources.json 
 else
     echo "Eventbridge rule already created, skipping..."
 fi
@@ -192,10 +197,20 @@ echo "Giving permission to eventbridge rule to invoke lambda function..."
 aws lambda add-permission --function-name ${FUNCTION_NAME} --principal events.amazonaws.com --statement-id eventbridge-invoke-${SUFFIX} --action "lambda:InvokeFunction" --source-arn ${EVENTBRIDGE_RULE} >> deployment-log-${SUFFIX}.out
 wait
 
+aws lambda add-permission --function-name ${TRANSFORMATION_FUNCTION_NAME} --principal events.amazonaws.com --statement-id eventbridge-invoke-${SUFFIX} --action "lambda:InvokeFunction" --source-arn ${TRANSFORMATION_EVENTBRIDGE_RULE} >> deployment-log-${SUFFIX}.out
+wait
+
 TARGET_JSON=$(jq --arg aws_id "${AWS_ACCOUNT_ID}" --arg func_name "${FUNCTION_NAME}" --arg ingest_bucket "${INGESTION_BUCKET_NAME}" --arg process_bucket "${PROCESSED_BUCKET_NAME}" '.Arn |= "arn:aws:lambda:us-east-1:" + $aws_id + ":function:" + $func_name | .Input = "{\"ingested_bucket\":" + "\"" + $ingest_bucket + "\"" + ", \"processed_bucket\":" + "\"" + $process_bucket + "\"" + "}"' templates/eventbridge_targets.json)
+
+TRANSFORMATION_TARGET_JSON=$(jq --arg aws_id "${AWS_ACCOUNT_ID}" --arg func_name "${TRANSFORMATION_FUNCTION_NAME}" --arg ingest_bucket "${INGESTION_BUCKET_NAME}" --arg process_bucket "${PROCESSED_BUCKET_NAME}" '.Arn |= "arn:aws:lambda:us-east-1:" + $aws_id + ":function:" + $func_name | .Input = "{\"ingested_bucket\":" + "\"" + $ingest_bucket + "\"" + ", \"processed_bucket\":" + "\"" + $process_bucket + "\"" + "}"' templates/eventbridge_targets.json)
+
+# ALT TARGET JSON  --arg transformation_func_name "${TRANSFORMATION_FUNCTION_NAME}" .... Arn |= "{\"ingestion_arn\":" + \"arn:aws:lambda:us-east-1:\" + "\"" + $aws_id + "\"" + \":function:\" + "\"" + $func_name + "\"" ", \"transformation_arn:\" + \"arn:aws:lambda:us-east-1:\" + "\"" + $aws_id + "\"" + \":function:\" + "\"" + $transformation_func_name + "\"" + "}"
+
 
 echo "Adding lambda function as target for eventbridge rule..."
 aws events put-targets --rule ingestion-rule-${SUFFIX} --targets "[${TARGET_JSON}]" >> deployment-log-${SUFFIX}.out
+
+aws events put-targets --rule transformation-rule-${SUFFIX} --targets "[${TRANSFORMATION_TARGET_JSON}]" >> deployment-log-${SUFFIX}.out
 
 set +e
 set +u

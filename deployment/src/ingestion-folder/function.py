@@ -37,7 +37,7 @@ def ingest_database_to_s3(bucket_name):
     log_group = log_groups['logGroups'][-1]['logGroupName']
 
     log_streams = logs.describe_log_streams(logGroupName=log_group)
-    log_stream = log_streams['logStreams'][-1]['logStreamName']
+    log_stream = log_streams['logStreams'][0]['logStreamName']
     log_events = logs.get_log_events(logGroupName=log_group, logStreamName=log_stream)
 
     first_ingestion = True

@@ -115,7 +115,8 @@ def test_load_table_from_name_raises_ValueError_when_passed_invalid_args():
 
 
 @mock_s3
-def test_load_table_from_name_calls_pandas_read_parquet_with_bucket_name():
+@mock.patch('pandas.read_parquet')
+def test_load_table_from_name_calls_pandas_read_parquet_with_bucket_name(read_parquet):
 
     s3 = boto3.client("s3")
     bucket = "test_bucket"
@@ -125,13 +126,13 @@ def test_load_table_from_name_calls_pandas_read_parquet_with_bucket_name():
     s3.create_bucket(Bucket=bucket)
     s3.upload_file(Filename=file, Bucket=bucket, Key=key)
 
-    pd.read_parquet = MagicMock()
     load_table_from_name(s3, bucket, key)
-    pd.read_parquet.assert_called_with(f's3://{bucket}/{key}')
+    read_parquet.assert_called_with(f's3://{bucket}/{key}')
 
 
 @mock_s3
-def test_load_table_from_name_returns_pandas_dataframe():
+@mock.patch('pandas.read_parquet')
+def test_load_table_from_name_returns_pandas_dataframe(read_parquet):
     s3 = boto3.client("s3")
     bucket = "test_bucket"
     file = "OLAP_load/test/test_parquet.parquet"
@@ -147,8 +148,6 @@ def test_load_table_from_name_returns_pandas_dataframe():
 
 @mock_secretsmanager
 def test_get_db_credentials():
-    sm = boto3.client('secretsmanager')
-
     with pytest.raises(ValueError):
         get_db_credentials("hello")
 
@@ -200,21 +199,36 @@ def test_upload_to_OLAP_raises_value_errors():
                       "port": "changeme", "username": "changeme", "password": "changeme"}
 
     with pytest.raises(ValueError):
-        upload_to_OLAP('', '')
+        upload_to_OLAP('', '', '')
     with pytest.raises(ValueError):
-        upload_to_OLAP(2, db_credentials)
+        upload_to_OLAP(2, db_credentials, '')
 
 
 @mock.patch('sqlalchemy.create_engine')
-def test_upload_to_OLAP_calls_createEngine_with_db_credentials(mock_create_engine):
+@mock.patch('pandas.DataFrame.to_sql')
+def test_upload_to_OLAP_calls_createEngine_with_db_credentials(mock_create_engine, mock_to_sql):
 
     df = pd.DataFrame()
-
     db_credentials = {"host": "changeme", "database": "changeme", "schema": "changeme",
                       "port": "changeme", "username": "changeme", "password": "changeme"}
-    db_url = f"postgresql+pg8000://{db_credentials['username']}:{db_credentials['password']}@{db_credentials['host']}:{db_credentials['port']}/{db_credentials['database']}?currentSchema={db_credentials['schema']}"
+    db_url = f"postgresql+pg8000://{db_credentials['username']}:{db_credentials['password']}@{db_credentials['host']}:{db_credentials['port']}/{db_credentials['database']}"
 
-    upload_to_OLAP(df, db_credentials)
+    upload_to_OLAP(df, db_credentials, "")
 
     sqlalchemy.create_engine.assert_called_with(db_url)
-    pass
+
+
+@mock.patch('pandas.DataFrame.to_sql')
+@mock.patch('sqlalchemy.engine.Engine.connect')
+def test_upload_to_OLAP_call_with_correct_arguments(to_sql, connect):
+
+    df = pd.read_parquet('OLAP_load/test/test_parquet.parquet')
+
+    db_credentials = {"host": "changeme", "database": "changeme", "schema": "changeme",
+                      "port": 5432, "username": "changeme", "password": "changeme"}
+
+    table_name = "test_table"
+
+    upload_to_OLAP(df, db_credentials, table_name)
+
+    assert table_name in df.to_sql.call_args.args

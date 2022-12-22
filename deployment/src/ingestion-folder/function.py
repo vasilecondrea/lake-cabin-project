@@ -94,7 +94,7 @@ def lambda_handler(event, context):
     print(f'[INGESTION] Ingestion started')
 
     # Allow time for cloudwatch log to be created
-    time.sleep(3)
+    time.sleep(10)
 
     # Ingest the database to S3
     ingest_database_to_s3(event['ingested_bucket'])

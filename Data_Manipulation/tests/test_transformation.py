@@ -1,6 +1,8 @@
+import sys
+print(sys.path)
 from moto import mock_s3
 import boto3
-from src.transformation import \
+from src.data_transformation_code.transformation import \
     retrieve_csv_from_s3_bucket, convert_csv_to_parquet_data_frame, create_dim_counterparty, create_dim_transaction, \
     create_dim_payment_type, delete_cols_from_df, create_dim_currency, create_lookup_from_json, create_dim_design, \
     create_dim_date, create_dim_location, create_dim_staff, create_fact_sales_order, create_fact_payment, \
@@ -9,11 +11,12 @@ import pandas as pd
 import filecmp
 from datetime import datetime
 import tempfile
+from unittest.mock import patch
 
 @mock_s3
 def test_retrieve_csv_from_s3_bucket():
 
-    file = "tests/test_csv.csv"
+    file = "test_csv.csv"
     key = "test_csv.csv"
     bucket = "test_bucket"
 
@@ -77,8 +80,12 @@ def test_create_lookup_from_json():
         "ARS": "Argentina Peso"
     }
 
-    result = create_lookup_from_json(test_json_file, 'abbreviation', 'currency')
+    # with patch('os.environ') as mock:
+    #     mock.return_value = "."
+    #     result = create_lookup_from_json(test_json_file, 'abbreviation', 'currency')
+    #     assert result == expected_lookup
 
+    result = create_lookup_from_json(test_json_file, 'abbreviation', 'currency')
     assert result == expected_lookup
 
 
@@ -110,13 +117,13 @@ def test_modify_data_for_dim_counterparty_table():
     dim_counterparty_df = pd.DataFrame({
         'counterparty_id': [1, 2],
         'counterparty_legal_name': ['Fahey and Sons', 'Leannon, Predovic and Morar'],
-        'address_line_1': ['605 Haskell Trafficway', '079 Horacio Landing'],
-        'address_line_2': ['Axel Freeway', None],
-        'district': [None, None],
-        'city': ['East Bobbie', 'Utica'],
-        'postal_code': ['88253-4257', '93045'],
-        'country':['Heard Island and McDonald Islands', 'Austria'],
-        'phone':['9687 937447', '7772 084705']
+        'counterparty_legal_address_line_1': ['605 Haskell Trafficway', '079 Horacio Landing'],
+        'counterparty_legal_address_line_2': ['Axel Freeway', None],
+        'counterparty_legal_district': [None, None],
+        'counterparty_legal_city': ['East Bobbie', 'Utica'],
+        'counterparty_legal_postal_code': ['88253-4257', '93045'],
+        'counterparty_legal_country':['Heard Island and McDonald Islands', 'Austria'],
+        'counterparty_legal_phone_number':['9687 937447', '7772 084705']
     })
 
     result = create_dim_counterparty(counterparty_df, address_df)
@@ -296,7 +303,7 @@ def test_modify_data_for_dim_location():
     })
 
     dim_location_df = pd.DataFrame({
-        'address_id': [15, 28],
+        'location_id': [15, 28],
         'address_line_1': ['605 Haskell Trafficway', '079 Horacio Landing'],
         'address_line_2': ['Axel Freeway', None],
         'district': [None, None],
@@ -494,17 +501,17 @@ def test_split_datetime_to_date_and_time():
 @mock_s3
 def test_lambda_handler():
 
-    landing_bucket = 'ingested-data-bucket-1'
+    ingested_bucket = 'ingested-data-bucket-1'
     processed_bucket = 'processed-data-bucket-1'
     payment_file = "tests/payment_type.csv"
     currency_file = "tests/currency.csv"
 
     s3 = boto3.client("s3")
-    s3.create_bucket(Bucket=landing_bucket)
+    s3.create_bucket(Bucket=ingested_bucket)
     s3.create_bucket(Bucket=processed_bucket)
-    s3.upload_file(Filename=payment_file, Bucket=landing_bucket, Key=payment_file)
-    s3.upload_file(Filename=currency_file, Bucket=landing_bucket, Key=currency_file)
+    s3.upload_file(Filename=payment_file, Bucket=ingested_bucket, Key=payment_file)
+    s3.upload_file(Filename=currency_file, Bucket=ingested_bucket, Key=currency_file)
 
-    result = lambda_handler({}, object())
+    result = lambda_handler({"ingested_bucket": ingested_bucket, "processed_bucket": processed_bucket}, object())
 
     assert result['message'] == 'Finished processing!'

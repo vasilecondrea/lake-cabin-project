@@ -2,6 +2,7 @@ import boto3
 import pg8000
 import datetime
 import json
+import time
 
 # Create an S3 client
 s3 = boto3.client('s3')
@@ -41,7 +42,7 @@ def ingest_database_to_s3(bucket_name):
 
     first_ingestion = True
     for event in log_events['events']:
-        if "END RequestId:" in event['message']:
+        if "[INGESTION] Ingestion completed" in event['message']:
             first_ingestion = False
             break
 
@@ -91,6 +92,9 @@ def ingest_database_to_s3(bucket_name):
 def lambda_handler(event, context):
     # Log the start time of the function execution
     print(f'[INGESTION] Ingestion started')
+
+    # Allow time for cloudwatch log to be created
+    time.sleep(3)
 
     # Ingest the database to S3
     ingest_database_to_s3(event['ingested_bucket'])

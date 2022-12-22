@@ -27,6 +27,7 @@ if [ $SUFFIX == null ] || [ $SUFFIX == "" ]; then
 fi
 
 FUNCTION_NAME=data-ingestion-${SUFFIX}
+TRANSFORMATION_FUNCTION_NAME=transformation-${SUFFIX}
 AWS_ACCOUNT_ID=$(aws sts get-caller-identity | jq .Account | tr -d '"')
 INGESTION_BUCKET_NAME=ingestion-bucket-${SUFFIX}
 PROCESSED_BUCKET_NAME=processed-bucket-${SUFFIX}
@@ -84,13 +85,34 @@ zip ../../test-ingestion.zip function.py >> deployment-log-${SUFFIX}.out
 cd ../../
 wait
 
+# --------------------------------
+echo "Creating transformation function deployment package..."
+# cd ../Data_Manipulation/src/data_transformation_code/package
+# zip -r ../../../deployment/transformation.zip . >> deployment-log-${SUFFIX}.out
+# cd ../
+# zip -r transformation.zip transformation.py
+# cd ../../../deployment
+# zip transformation.zip transformation.py
+cd ../Data_Manipulation/src/data_transformation_code/package 
+zip -r ../transformation.zip . >> deployment-log-${SUFFIX}.out
+cd ../
+zip transformation.zip transformation.py currency-symbols.json
+cd ../../../deployment
+wait
+
 echo "Uploading the deployment package..."
 aws s3 cp test-ingestion.zip s3://${CODE_BUCKET_NAME}/${FUNCTION_NAME}/test-ingestion.zip >> deployment-log-${SUFFIX}.out
 wait
 
+# --------------------------------
+echo "Uploading transformation deployment package..."
+aws s3 cp ../Data_Manipulation/src/data_transformation_code/transformation.zip s3://${CODE_BUCKET_NAME}/${TRANSFORMATION_FUNCTION_NAME}/transformation.zip >> deployment-log-${SUFFIX}.out
+wait
+
 echo "Setting up s3 read/write policy template..."
-S3_READ_WRITE_JSON=$(jq --arg i_bucket "${INGESTION_BUCKET_NAME}" \
-'.Statement[0].Resource[0] |= "arn:aws:s3:::" + $i_bucket + "/*"' templates/s3_ingestion_policy_template.json)
+S3_READ_WRITE_JSON=$(jq --arg i_bucket "arn:aws:s3:::${INGESTION_BUCKET_NAME}/*" \
+'.Statement[0].Resource = [$i_bucket]' templates/s3_ingestion_policy_template.json |\
+jq --arg p_bucket "arn:aws:s3:::${PROCESSED_BUCKET_NAME}/*" '.Statement[0].Resource += [$p_bucket]' | jq --arg i_buck "arn:aws:s3:::${INGESTION_BUCKET_NAME}" '.Statement[0].Resource += [$i_buck]' | jq --arg p_buck "arn:aws:s3:::${PROCESSED_BUCKET_NAME}" '.Statement[0].Resource += [$p_buck]')
 
 echo "Setting up cloudwatch log policy template..."
 CLOUD_WATCH_JSON=$(jq --arg aws_id "${AWS_ACCOUNT_ID}" --arg func_name "${FUNCTION_NAME}" \
@@ -139,7 +161,16 @@ aws iam attach-role-policy --policy-arn ${S3_READ_WRITE_POLICY} --role-name lamb
 wait
 
 echo 'Creating lambda function...'
-FUNCTION=$(aws lambda create-function --function-name ${FUNCTION_NAME} --runtime python3.9 --role ${IAM_ROLE} --package-type Zip --handler function.lambda_handler --code S3Bucket=${CODE_BUCKET_NAME},S3Key=${FUNCTION_NAME}/test-ingestion.zip)
+FUNCTION=$(aws lambda create-function --function-name ${FUNCTION_NAME} \
+--runtime python3.9 --role ${IAM_ROLE} --package-type Zip --handler function.lambda_handler \
+--code S3Bucket=${CODE_BUCKET_NAME},S3Key=${FUNCTION_NAME}/test-ingestion.zip)
+wait
+
+# ---------------------------------
+echo 'Creating transformation lambda function...'
+FUNCTION=$(aws lambda create-function --function-name ${TRANSFORMATION_FUNCTION_NAME} \
+--runtime python3.9 --role ${IAM_ROLE} --package-type Zip --handler transformation.lambda_handler \
+--code S3Bucket=${CODE_BUCKET_NAME},S3Key=${TRANSFORMATION_FUNCTION_NAME}/transformation.zip)
 wait
 
 if [ "$EVENTBRIDGE_RULE" == "" ] || [ "$EVENTBRIDGE_RULE" == null ]; then
@@ -161,7 +192,8 @@ echo "Giving permission to eventbridge rule to invoke lambda function..."
 aws lambda add-permission --function-name ${FUNCTION_NAME} --principal events.amazonaws.com --statement-id eventbridge-invoke-${SUFFIX} --action "lambda:InvokeFunction" --source-arn ${EVENTBRIDGE_RULE} >> deployment-log-${SUFFIX}.out
 wait
 
-TARGET_JSON=$(jq --arg aws_id "${AWS_ACCOUNT_ID}" --arg func_name "${FUNCTION_NAME}" --arg ingest_bucket "${INGESTION_BUCKET_NAME}" '.Arn |= "arn:aws:lambda:us-east-1:" + $aws_id + ":function:" + $func_name | .Input |= "{\"ingested_bucket\":\"" + $ingest_bucket + "\"}"' templates/eventbridge_targets.json)
+TARGET_JSON=$(jq --arg aws_id "${AWS_ACCOUNT_ID}" --arg func_name "${FUNCTION_NAME}" --arg ingest_bucket "${INGESTION_BUCKET_NAME}" --arg process_bucket "${PROCESSED_BUCKET_NAME}" '.Arn |= "arn:aws:lambda:us-east-1:" + $aws_id + ":function:" + $func_name | .Input = "{\"ingested_bucket\":" + "\"" + $ingest_bucket + "\"" + ", \"processed_bucket\":" + "\"" + $process_bucket + "\"" + "}"' templates/eventbridge_targets.json)
+
 echo "Adding lambda function as target for eventbridge rule..."
 aws events put-targets --rule ingestion-rule-${SUFFIX} --targets "[${TARGET_JSON}]" >> deployment-log-${SUFFIX}.out
 

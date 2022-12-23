@@ -1,0 +1,33 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": "logs:CreateLogGroup",
+            "Resource": "arn:aws:logs:us-east-1:INSERT_ACCOUNT_ID_HERE:*"
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "logs:CreateLogStream",
+                "logs:PutLogEvents"
+            ],
+            "Resource": [
+                "arn:aws:logs:us-east-1:INSERT_ACCOUNT_ID_HERE:log-group:/aws/lambda/LAMBDA_FUNCTION_NAME_HERE:*"
+            ]
+        },
+        {
+            "Effect": "Allow",
+            "Action": "secretsmanager:GetSecretValue",
+            "Resource": "INSERT_SECRET_ARN_HERE"
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "logs:Describe*",
+                "logs:Get*"
+                ],
+            "Resource": "arn:aws:logs:us-east-1:INSERT_ACCOUNT_ID_HERE:log-group:*"
+        }
+    ]
+}

@@ -1,0 +1,8 @@
+{
+    "host": "changeme",
+    "database": "changeme",
+    "schema": "changeme",
+    "port": "changeme",
+    "username": "changeme",
+    "password": "changeme"
+}

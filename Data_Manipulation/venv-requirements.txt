@@ -1,0 +1,5 @@
+boto3==1.26.31
+moto==4.0.11
+pandas==1.5.2
+pyarrow==10.0.1
+pytest==7.2.0

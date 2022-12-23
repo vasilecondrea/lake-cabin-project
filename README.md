@@ -15,6 +15,7 @@ These can be found hosted under the python package index https://pypi.org/.
  - numpy-1.24.0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
  - pandas-1.5.2-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
  - pyarrow-10.0.1-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+ - pytz-2022.7-py2.py3-none-any.whl
 
 Then follow the steps to place these in the correct location:
 - Create the `package` directory in the path `Data_Manipulation/src/data_transformation_code/`

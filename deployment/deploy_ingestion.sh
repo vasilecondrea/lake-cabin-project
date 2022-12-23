@@ -212,5 +212,7 @@ aws events put-targets --rule ingestion-rule-${SUFFIX} --targets "[${TARGET_JSON
 
 aws events put-targets --rule transformation-rule-${SUFFIX} --targets "[${TRANSFORMATION_TARGET_JSON}]" >> deployment-log-${SUFFIX}.out
 
+echo "Setting up SNS topic..."
+
 set +e
 set +u

@@ -187,6 +187,8 @@ def create_fact_purchase_order(purchase_df):
     fact_purchase_orders['created_time'] = split_datetime_list_to_date_and_time_list(fact_purchase_orders['created_at'])['times']
     fact_purchase_orders['last_updated_date'] = split_datetime_list_to_date_and_time_list(fact_purchase_orders['last_updated'])['dates']
     fact_purchase_orders['last_updated_time'] = split_datetime_list_to_date_and_time_list(fact_purchase_orders['last_updated'])['times'] 
+    fact_purchase_orders['agreed_delivery_date'] = [datetime.strptime(date, '%Y-%m-%d') for date in fact_purchase_orders['agreed_delivery_date']]
+    fact_purchase_orders['agreed_payment_date'] = [datetime.strptime(date, '%Y-%m-%d') for date in fact_purchase_orders['agreed_payment_date']]
     
     cols_to_delete = ['created_at', 'last_updated']
     fact_purchase_orders = delete_cols_from_df(fact_purchase_orders, cols_to_delete)

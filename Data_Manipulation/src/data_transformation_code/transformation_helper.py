@@ -1,4 +1,5 @@
 import json
+from datetime import datetime
 
 def delete_cols_from_df(df, col_list):
     for col in col_list:
@@ -21,7 +22,7 @@ def create_lookup_from_json(json_file, key, value, path="tests/"):
 def split_datetime_list_to_date_and_time_list(datetime_list):
     sep = ' '
 
-    date_list = [date.split(sep, 1)[0] for date in datetime_list]
-    time_list = [time.split(sep, 1)[1] for time in datetime_list]
+    date_list = [datetime.strptime(date.split(sep, 1)[0], '%Y-%m-%d') for date in datetime_list]
+    time_list = [datetime.strptime(time.split(sep, 1)[1], '%H:%M:%S.%f') for time in datetime_list]
 
     return {'dates': date_list, 'times': time_list}

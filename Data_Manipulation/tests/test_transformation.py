@@ -366,10 +366,10 @@ def test_modify_data_for_fact_sales_order():
 
     fact_sales_order = pd.DataFrame({
         'sales_order_id': [1, 2],
-        'created_date': ['2022-11-03', '2022-11-03'],
-        'created_time': ['14:20:52.186', '14:20:52.186'],  
-        'last_updated_date': ['2022-11-03', '2022-11-03'],
-        'last_updated_time': ['14:20:52.186', '14:20:52.186'],
+        'created_date': [datetime.strptime('2022-11-03', '%Y-%m-%d'), datetime.strptime('2022-11-03', '%Y-%m-%d')],
+        'created_time': [datetime.strptime('14:20:52.186', '%H:%M:%S.%f'), datetime.strptime('14:20:52.186', '%H:%M:%S.%f')],  
+        'last_updated_date': [datetime.strptime('2022-11-03', '%Y-%m-%d'), datetime.strptime('2022-11-03', '%Y-%m-%d')],
+        'last_updated_time': [datetime.strptime('14:20:52.186', '%H:%M:%S.%f'), datetime.strptime('14:20:52.186', '%H:%M:%S.%f')],
         'sales_staff_id': [16, 19],
         'counterparty_id': [18, 8],
         'currency_id': [3, 2],
@@ -402,10 +402,10 @@ def test_modify_data_for_fact_payment():
 
     fact_payment = pd.DataFrame({
         'payment_id': [2, 3],
-        'created_date': ['2022-11-03', '2022-11-03'],
-        'created_time': ['14:20:52.187', '14:20:52.186'],  
-        'last_updated_date': ['2022-11-03', '2022-11-03'],
-        'last_updated_time': ['14:20:52.187', '14:20:52.186'],
+        'created_date': [datetime.strptime('2022-11-03', '%Y-%m-%d'), datetime.strptime('2022-11-03', '%Y-%m-%d')],
+        'created_time': [datetime.strptime('14:20:52.187', '%H:%M:%S.%f'), datetime.strptime('14:20:52.186', '%H:%M:%S.%f')],  
+        'last_updated_date': [datetime.strptime('2022-11-03', '%Y-%m-%d'), datetime.strptime('2022-11-03', '%Y-%m-%d')],
+        'last_updated_time': [datetime.strptime('14:20:52.187', '%H:%M:%S.%f'), datetime.strptime('14:20:52.186', '%H:%M:%S.%f')],
         'transaction_id': [2, 3],
         'counterparty_id': [15, 18],
         'payment_amount': [552548.62, 205952.22],
@@ -438,18 +438,18 @@ def test_modify_data_for_fact_purchase_order():
 
     fact_purchase_order = pd.DataFrame({
         'purchase_order_id': [1, 2],
-        'created_date': ['2022-11-03', '2022-11-03'],
-        'created_time': ['14:20:52.187', '14:20:52.186'],  
-        'last_updated_date': ['2022-11-03', '2022-11-03'],
-        'last_updated_time': ['14:20:52.187', '14:20:52.186'],
+        'created_date': [datetime.strptime('2022-11-03', '%Y-%m-%d'), datetime.strptime('2022-11-03', '%Y-%m-%d')],
+        'created_time': [datetime.strptime('14:20:52.187', '%H:%M:%S.%f'), datetime.strptime('14:20:52.186', '%H:%M:%S.%f')],
+        'last_updated_date': [datetime.strptime('2022-11-03', '%Y-%m-%d'), datetime.strptime('2022-11-03', '%Y-%m-%d')],
+        'last_updated_time': [datetime.strptime('14:20:52.187', '%H:%M:%S.%f'), datetime.strptime('14:20:52.186', '%H:%M:%S.%f')],
         'staff_id': [12, 20],
         'counterparty_id': [11, 17],
         'item_code': ['ZDOI5EA', 'QLZLEXR'],
         'item_quantity': [371, 286],
         'item_unit_price': [361.39, 199.04],
         'currency_id': [2, 2],
-        'agreed_delivery_date': ['2022-11-09', '2022-11-04'],
-        'agreed_payment_date': ['2022-11-07', '2022-11-07'],
+        'agreed_delivery_date': [datetime.strptime('2022-11-09', '%Y-%m-%d'), datetime.strptime('2022-11-04', '%Y-%m-%d')],
+        'agreed_payment_date': [datetime.strptime('2022-11-07', '%Y-%m-%d'), datetime.strptime('2022-11-07', '%Y-%m-%d')],
         'agreed_delivery_location_id': [6, 8]
     })
 
@@ -484,11 +484,11 @@ def test_save_and_upload_data_frame_as_parquet_file():
 
 
 def test_split_datetime_to_date_and_time():
-    datetime = ['2022-11-03 14:20:49.962']
-    expected_date = ['2022-11-03']
-    expected_time = ['14:20:49.962']
+    date_time = ['2022-11-03 14:20:49.962']
+    expected_date = [datetime.strptime('2022-11-03', '%Y-%m-%d')]
+    expected_time = [datetime.strptime('14:20:49.962', '%H:%M:%S.%f')]
 
-    result = split_datetime_list_to_date_and_time_list(datetime)
+    result = split_datetime_list_to_date_and_time_list(date_time)
 
     assert result['dates'] == expected_date
     assert result['times'] == expected_time

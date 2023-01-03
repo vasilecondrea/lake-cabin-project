@@ -23,7 +23,7 @@ if [ "$DESTINATION_DB_CREDS" == "" ] || [ "$DESTINATION_DB_CREDS" == null ]; the
     DESTINATION_DB_CREDS=$(aws secretsmanager create-secret --name db-creds-destination --secret-string file://db_creds_destination.json | jq .Arn | tr -d '"')
 
     RESOURCES_JSON=$(cat resources.json)
-    jq --arg destination_creds "${SOURCE_DB_CREDS}" '.destination_db_creds |= $destination_creds' <<< $RESOURCES_JSON > resources.json
+    jq --arg destination_creds "${DESTINATION_DB_CREDS}" '.destination_db_creds |= $destination_creds' <<< $RESOURCES_JSON > resources.json
 else
     echo "AWS destination database credentials already generated, skipping..."
 fi

@@ -14,3 +14,7 @@ coverage.xml
 .pytest_cache/
 
 .vscode
+deployment/db_creds_destination.json
+deployment/db_creds_source.json
+
+OLAP_load/package

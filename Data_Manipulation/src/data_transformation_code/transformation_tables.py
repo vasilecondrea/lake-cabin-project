@@ -1,93 +1,7 @@
 import pandas as pd
-import json
-import tempfile
 from datetime import datetime
 import math
-import boto3
-import os
-
-def lambda_handler(event, context):
-
-    s3 = boto3.client("s3")
-    landing_zone_bucket = event['ingested_bucket']
-    processed_bucket = event['processed_bucket']
-    list_objects = [object['Key'] for object in s3.list_objects(Bucket=landing_zone_bucket)['Contents']]
-
-    lookup = create_lookup_from_json('currency-symbols.json', 'abbreviation', 'currency')
-
-    for obj_name in list_objects:
-        print("Checking ", obj_name)
-        file = retrieve_csv_from_s3_bucket(s3, landing_zone_bucket, obj_name)
-        df = convert_csv_to_parquet_data_frame(file)
-
-        if obj_name == 'payment_type.csv':
-            save_and_upload_data_frame_as_parquet_file(s3, processed_bucket, 'dim_payment_type.parquet', create_dim_payment_type(df))
-        elif obj_name == 'transaction.csv':
-            save_and_upload_data_frame_as_parquet_file(s3, processed_bucket, 'dim_transaction.parquet', create_dim_transaction(df))
-        elif obj_name == 'currency.csv':
-            save_and_upload_data_frame_as_parquet_file(s3, processed_bucket, 'dim_currency.parquet', create_dim_currency(df, lookup))
-        elif obj_name == 'design.csv':
-            save_and_upload_data_frame_as_parquet_file(s3, processed_bucket, 'dim_design.parquet', create_dim_design(df))
-        elif obj_name == 'staff.csv':
-            department_file = retrieve_csv_from_s3_bucket(s3, landing_zone_bucket, 'department.csv')
-            department_df = convert_csv_to_parquet_data_frame(department_file)
-            save_and_upload_data_frame_as_parquet_file(s3, processed_bucket, 'dim_staff.parquet', create_dim_staff(df, department_df))
-        elif obj_name == 'counterparty.csv':
-            address_file = retrieve_csv_from_s3_bucket(s3, landing_zone_bucket, 'address.csv')
-            address_df = convert_csv_to_parquet_data_frame(address_file)
-            save_and_upload_data_frame_as_parquet_file(s3, processed_bucket, 'dim_counterparty.parquet', create_dim_counterparty(df, address_df))
-        elif obj_name == 'payment.csv':
-            save_and_upload_data_frame_as_parquet_file(s3, processed_bucket, 'fact_payment.parquet', create_fact_payment(df))
-            save_and_upload_data_frame_as_parquet_file(s3, processed_bucket, 'dim_date_payment.parquet', create_dim_date(df))
-        elif obj_name == 'sales_order.csv':
-            save_and_upload_data_frame_as_parquet_file(s3, processed_bucket, 'fact_sales_order.parquet', create_fact_sales_order(df))
-            save_and_upload_data_frame_as_parquet_file(s3, processed_bucket, 'dim_date_sales_order.parquet', create_dim_date(df))
-        elif obj_name == 'purchase_order.csv':
-            save_and_upload_data_frame_as_parquet_file(s3, processed_bucket, 'fact_purchase_orders.parquet', create_fact_purchase_orders(df))
-            save_and_upload_data_frame_as_parquet_file(s3, processed_bucket, 'dim_date_purchase_orders.parquet', create_dim_date(df))
-        elif obj_name == 'address.csv':
-            save_and_upload_data_frame_as_parquet_file(s3, processed_bucket, 'dim_location.parquet', create_dim_location(df))
-
-    message = 'Finished processing!'
-    return { 
-        'message' : message
-    }
-
-
-def retrieve_csv_from_s3_bucket(s3, bucket, key):
-    with tempfile.NamedTemporaryFile(delete=False) as f:
-        f.name = "/tmp/" + key
-        s3.download_file(Bucket=bucket, Key=key, Filename=f.name)
-        return f
-
-
-def convert_csv_to_parquet_data_frame(file):
-    with open(file.name, 'r') as orig_f:
-        with tempfile.NamedTemporaryFile(delete=False) as f:
-            df = pd.read_csv(orig_f)
-            df.to_parquet(f.name)
-            df = pd.read_parquet(f.name)
-            return df
-
-
-def delete_cols_from_df(df, col_list):
-    for col in col_list:
-        del df[col]
-    return df
-
-
-def create_lookup_from_json(json_file, key, value):
-    configPath = os.environ['LAMBDA_TASK_ROOT'] + "/" + json_file
-
-    with open(configPath) as f:
-        print(f)
-        data = json.load(f)
-        lookup = {}
-        for element in data:
-            lookup[element[key]] = element[value] 
-    
-    return lookup
-
+from src.data_transformation_code.transformation_helper import delete_cols_from_df, split_datetime_list_to_date_and_time_list
 
 def create_dim_counterparty(counterparty_df, address_df):
     dim_counterparty_df = counterparty_df.copy()
@@ -280,19 +194,3 @@ def create_fact_purchase_orders(purchase_df):
     return fact_purchase_orders[['purchase_order_id', 'created_date', 'created_time', 'last_updated_date', 'last_updated_time', \
         'staff_id', 'counterparty_id', 'item_code', 'item_quantity', 'item_unit_price', 'currency_id', 'agreed_delivery_date', \
         'agreed_payment_date', 'agreed_delivery_location_id']]
-
-
-def save_and_upload_data_frame_as_parquet_file(s3, bucket, key, df):
-    print(bucket)
-    with tempfile.NamedTemporaryFile(delete=False) as f:
-        df.to_parquet(f.name)
-        s3.upload_file(Filename=f.name, Bucket=bucket, Key=key)
-
-
-def split_datetime_list_to_date_and_time_list(datetime_list):
-    sep = ' '
-
-    date_list = [date.split(sep, 1)[0] for date in datetime_list]
-    time_list = [time.split(sep, 1)[1] for time in datetime_list]
-
-    return {'dates': date_list, 'times': time_list}

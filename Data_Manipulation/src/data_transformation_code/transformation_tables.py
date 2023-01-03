@@ -1,7 +1,7 @@
 import pandas as pd
 from datetime import datetime
 import math
-from src.data_transformation_code.transformation_helper import delete_cols_from_df, split_datetime_list_to_date_and_time_list
+from transformation_helper import delete_cols_from_df, split_datetime_list_to_date_and_time_list
 
 def create_dim_counterparty(counterparty_df, address_df):
     dim_counterparty_df = counterparty_df.copy()

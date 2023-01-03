@@ -1,4 +1,3 @@
-import os
 import json
 
 def delete_cols_from_df(df, col_list):
@@ -6,8 +5,8 @@ def delete_cols_from_df(df, col_list):
         del df[col]
     return df
 
-def create_lookup_from_json(json_file, key, value):
-    configPath = os.environ['LAMBDA_TASK_ROOT'] + "/" + json_file
+def create_lookup_from_json(json_file, key, value, path="tests/"):
+    configPath = path + json_file
 
     with open(configPath) as f:
         data = json.load(f)

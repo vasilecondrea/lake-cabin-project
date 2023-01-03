@@ -1,15 +1,14 @@
 from moto import mock_s3
 import boto3
-from src.data_transformation_code.transformation_retrieve import retrieve_csv_from_s3_bucket, convert_csv_to_parquet_data_frame
-from src.data_transformation_code.transformation_upload import save_and_upload_data_frame_as_parquet_file
-from src.data_transformation_code.transformation_lambda import lambda_handler
-from src.data_transformation_code.transformation_tables import create_dim_counterparty, create_dim_transaction, create_dim_payment_type, create_dim_currency, create_dim_design, create_dim_date, create_dim_location, create_dim_staff, create_fact_sales_order, create_fact_payment, create_fact_purchase_orders
-from src.data_transformation_code.transformation_helper import delete_cols_from_df, create_lookup_from_json, split_datetime_list_to_date_and_time_list
+from transformation_retrieve import retrieve_csv_from_s3_bucket, convert_csv_to_parquet_data_frame
+from transformation_upload import save_and_upload_data_frame_as_parquet_file
+from transformation_lambda import lambda_handler
+from transformation_tables import create_dim_counterparty, create_dim_transaction, create_dim_payment_type, create_dim_currency, create_dim_design, create_dim_date, create_dim_location, create_dim_staff, create_fact_sales_order, create_fact_payment, create_fact_purchase_orders
+from transformation_helper import delete_cols_from_df, create_lookup_from_json, split_datetime_list_to_date_and_time_list
 import pandas as pd
 import filecmp
 from datetime import datetime
 import tempfile
-from unittest.mock import patch
 
 @mock_s3
 def test_retrieve_csv_from_s3_bucket():
@@ -70,7 +69,7 @@ def test_delete_cols_from_df():
 
 def test_create_lookup_from_json():
     
-    test_json_file = 'tests/lookup_test.json'
+    test_json_file = 'lookup_test.json'
     
     expected_lookup = {
         "ALL": "Albania Lek",
@@ -78,12 +77,9 @@ def test_create_lookup_from_json():
         "ARS": "Argentina Peso"
     }
 
-    # with patch('os.environ') as mock:
-    #     mock.return_value = "."
-    #     result = create_lookup_from_json(test_json_file, 'abbreviation', 'currency')
-    #     assert result == expected_lookup
+    path = "tests/"
 
-    result = create_lookup_from_json(test_json_file, 'abbreviation', 'currency')
+    result = create_lookup_from_json(test_json_file, 'abbreviation', 'currency', path)
     assert result == expected_lookup
 
 

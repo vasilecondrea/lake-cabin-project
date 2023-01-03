@@ -1,8 +1,9 @@
 import boto3
-from src.data_transformation_code.transformation_retrieve import retrieve_csv_from_s3_bucket, convert_csv_to_parquet_data_frame
-from src.data_transformation_code.transformation_upload import save_and_upload_data_frame_as_parquet_file
-from src.data_transformation_code.transformation_tables import create_dim_counterparty, create_dim_transaction, create_dim_payment_type, create_dim_currency, create_dim_design, create_dim_date, create_dim_location, create_dim_staff, create_fact_sales_order, create_fact_payment, create_fact_purchase_orders
-from src.data_transformation_code.transformation_helper import create_lookup_from_json
+from transformation_retrieve import retrieve_csv_from_s3_bucket, convert_csv_to_parquet_data_frame
+from transformation_upload import save_and_upload_data_frame_as_parquet_file
+from transformation_tables import create_dim_counterparty, create_dim_transaction, create_dim_payment_type, create_dim_currency, create_dim_design, create_dim_date, create_dim_location, create_dim_staff, create_fact_sales_order, create_fact_payment, create_fact_purchase_orders
+from transformation_helper import create_lookup_from_json
+import os
 
 def lambda_handler(event, context):
 
@@ -10,11 +11,22 @@ def lambda_handler(event, context):
     landing_zone_bucket = event['ingested_bucket']
     processed_bucket = event['processed_bucket']
     list_objects = [object['Key'] for object in s3.list_objects(Bucket=landing_zone_bucket)['Contents']]
+    lookup = None
 
-    lookup = create_lookup_from_json('currency-symbols.json', 'abbreviation', 'currency')
+    if 'LAMBDA_TASK_ROOT' in os.environ:
+        path = os.environ['LAMBDA_TASK_ROOT'] + "/"
+        lookup = create_lookup_from_json('currency-symbols.json', 'abbreviation', 'currency', path)
+    else:
+        lookup = create_lookup_from_json('currency-symbols.json', 'abbreviation', 'currency')
 
     for obj_name in list_objects:
-        file = retrieve_csv_from_s3_bucket(s3, landing_zone_bucket, obj_name)
+        file = None
+
+        if 'LAMBDA_TASK_ROOT' in os.environ:
+            file = retrieve_csv_from_s3_bucket(s3, landing_zone_bucket, obj_name)
+        else:
+            file = retrieve_csv_from_s3_bucket(s3, landing_zone_bucket, obj_name, "")
+            
         df = convert_csv_to_parquet_data_frame(file)
 
         if obj_name == 'payment_type.csv':

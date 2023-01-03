@@ -115,8 +115,8 @@ S3_READ_WRITE_JSON=$(jq --arg i_bucket "arn:aws:s3:::${INGESTION_BUCKET_NAME}/*"
 jq --arg p_bucket "arn:aws:s3:::${PROCESSED_BUCKET_NAME}/*" '.Statement[0].Resource += [$p_bucket]' | jq --arg i_buck "arn:aws:s3:::${INGESTION_BUCKET_NAME}" '.Statement[0].Resource += [$i_buck]' | jq --arg p_buck "arn:aws:s3:::${PROCESSED_BUCKET_NAME}" '.Statement[0].Resource += [$p_buck]')
 
 echo "Setting up cloudwatch log policy template..."
-CLOUD_WATCH_JSON=$(jq --arg aws_id "${AWS_ACCOUNT_ID}" --arg func_name "${FUNCTION_NAME}" --arg secret_arn "${SOURCE_DB_CREDS}" \
-'.Statement[0].Resource |= "arn:aws:logs:us-east-1:" + $aws_id + ":*" | .Statement[1].Resource[0] |= "arn:aws:logs:us-east-1:" + $aws_id + ":log-group:/aws/lambda/" + $func_name + ":*"\ | .Statement[2].Resource |= $secret_arn | .Statement[3].Resource |= "hello"' templates/cloudwatch_log_policy_template.json)
+CLOUD_WATCH_JSON=$(jq --arg aws_id "${AWS_ACCOUNT_ID}" --arg func_name "${FUNCTION_NAME}" \
+'.Statement[0].Resource |= "arn:aws:logs:us-east-1:" + $aws_id + ":*" | .Statement[1].Resource[0] |= "arn:aws:logs:us-east-1:" + $aws_id + ":log-group:/aws/lambda/" + $func_name + ":*"' templates/cloudwatch_log_policy_template.json)
 
 if [ "$CLOUDWATCH_POLICY" == "" ] || [ "$CLOUDWATCH_POLICY" == null ]; then
     echo "Creating cloudwatch policy from template..."
@@ -213,6 +213,22 @@ aws events put-targets --rule ingestion-rule-${SUFFIX} --targets "[${TARGET_JSON
 aws events put-targets --rule transformation-rule-${SUFFIX} --targets "[${TRANSFORMATION_TARGET_JSON}]" >> deployment-log-${SUFFIX}.out
 
 echo "Setting up SNS topic..."
+TOPIC_ARN=$(aws sns create-topic --name topic-${SUFFIX} | jq .TopicArn | tr -d '"')
+EMAIL_ADDRESS=$(cat email_subscriber.json | jq .email_address | tr -d '"')
+ 
+echo "Subscribing email address to the topic..."
+aws sns subscribe --topic-arn ${TOPIC_ARN} --protocol email --notification-endpoint "${EMAIL_ADDRESS}" >> deployment-log-${SUFFIX}.out
+wait
+
+echo "Sending a message to subscribers..."
+aws sns publish --topic-arn ${TOPIC_ARN} --message "Hello World!" >> deployment-log-${SUFFIX}.out
+wait
+
+echo "Creating metric filter for data ingestion function..."
+LOG_GROUP_NAME=/aws/lambda/${FUNCTION_NAME} 
+METRIC_NAMESPACE="${LOG_GROUP_NAME} metrics"
+aws logs put-metric-filter --log-group-name ${LOG_GROUP_NAME} --filter-name Errors --filter-pattern ERROR --metric-transformations metricName="error",metricNamespace="${METRIC_NAMESPACE}",metricValue=1 >> deployment-log-${SUFFIX}.out
+wait
 
 set +e
 set +u

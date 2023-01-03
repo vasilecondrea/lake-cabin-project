@@ -180,7 +180,7 @@ def create_fact_payment(payment_df):
         'counterparty_id', 'payment_amount', 'currency_id', 'payment_type_id', 'paid', 'payment_date']]
 
 
-def create_fact_purchase_orders(purchase_df):
+def create_fact_purchase_order(purchase_df):
     fact_purchase_orders = purchase_df.copy()
 
     fact_purchase_orders['created_date'] = split_datetime_list_to_date_and_time_list(fact_purchase_orders['created_at'])['dates']

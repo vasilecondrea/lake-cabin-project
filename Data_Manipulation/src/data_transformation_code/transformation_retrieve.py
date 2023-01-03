@@ -1,7 +1,7 @@
 import pandas as pd
 import tempfile
 
-def retrieve_csv_from_s3_bucket(s3, bucket, key, path="/tmp/"):
+def retrieve_csv_from_s3_bucket(s3, bucket, key, path=""):
     with tempfile.NamedTemporaryFile(delete=False) as f:
         f.name = path + key
         s3.download_file(Bucket=bucket, Key=key, Filename=f.name)

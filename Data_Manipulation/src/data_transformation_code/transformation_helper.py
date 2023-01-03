@@ -5,6 +5,7 @@ def delete_cols_from_df(df, col_list):
         del df[col]
     return df
 
+
 def create_lookup_from_json(json_file, key, value, path="tests/"):
     configPath = path + json_file
 
@@ -15,6 +16,7 @@ def create_lookup_from_json(json_file, key, value, path="tests/"):
             lookup[element[key]] = element[value] 
     
     return lookup
+
 
 def split_datetime_list_to_date_and_time_list(datetime_list):
     sep = ' '

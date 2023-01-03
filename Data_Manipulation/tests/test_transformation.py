@@ -3,7 +3,9 @@ import boto3
 from transformation_retrieve import retrieve_csv_from_s3_bucket, convert_csv_to_parquet_data_frame
 from transformation_upload import save_and_upload_data_frame_as_parquet_file
 from transformation_lambda import lambda_handler
-from transformation_tables import create_dim_counterparty, create_dim_transaction, create_dim_payment_type, create_dim_currency, create_dim_design, create_dim_date, create_dim_location, create_dim_staff, create_fact_sales_order, create_fact_payment, create_fact_purchase_orders
+from transformation_tables import create_dim_counterparty, create_dim_transaction, create_dim_payment_type, create_dim_currency, \
+    create_dim_design, create_dim_date, create_dim_location, create_dim_staff, \
+    create_fact_sales_order, create_fact_payment, create_fact_purchase_order
 from transformation_helper import delete_cols_from_df, create_lookup_from_json, split_datetime_list_to_date_and_time_list
 import pandas as pd
 import filecmp
@@ -216,7 +218,7 @@ def test_modify_data_for_dim_design():
     pd.testing.assert_frame_equal(result, dim_design)
 
 
-def test_modify_data_for_dim_date_for_unique_dates_on_sales_and_purchase_orders():
+def test_modify_data_for_dim_date_for_unique_dates_on_sales_and_purchase_order():
 
     sales_order_df = pd.DataFrame({
         'sales_order_id': [1, 2],
@@ -418,7 +420,7 @@ def test_modify_data_for_fact_payment():
     pd.testing.assert_frame_equal(result, fact_payment)
 
 
-def test_modify_data_for_fact_purchase_orders():
+def test_modify_data_for_fact_purchase_order():
     purchase_df = pd.DataFrame({
         'purchase_order_id': [1, 2],
         'created_at': ['2022-11-03 14:20:52.187', '2022-11-03 14:20:52.186'],
@@ -434,7 +436,7 @@ def test_modify_data_for_fact_purchase_orders():
         'agreed_delivery_location_id': [6, 8]
     })
 
-    fact_purchase_orders = pd.DataFrame({
+    fact_purchase_order = pd.DataFrame({
         'purchase_order_id': [1, 2],
         'created_date': ['2022-11-03', '2022-11-03'],
         'created_time': ['14:20:52.187', '14:20:52.186'],  
@@ -451,9 +453,9 @@ def test_modify_data_for_fact_purchase_orders():
         'agreed_delivery_location_id': [6, 8]
     })
 
-    result = create_fact_purchase_orders(purchase_df)
+    result = create_fact_purchase_order(purchase_df)
 
-    pd.testing.assert_frame_equal(result, fact_purchase_orders)
+    pd.testing.assert_frame_equal(result, fact_purchase_order)
 
 @mock_s3
 def test_save_and_upload_data_frame_as_parquet_file():

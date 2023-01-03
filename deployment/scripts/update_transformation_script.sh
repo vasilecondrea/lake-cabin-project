@@ -2,7 +2,7 @@ echo "Creating transformation function deployment package..."
 cd ../Data_Manipulation/src/data_transformation_code/package 
 zip --q -r ../transformation.zip .
 cd ../
-zip --q transformation.zip transformation.py currency-symbols.json
+zip --q transformation.zip transformation_helper.py transformation_lambda.py transformation_retrieve.py transformation_tables.py transformation_upload.py currency-symbols.json
 cd ../../../deployment
 wait
 

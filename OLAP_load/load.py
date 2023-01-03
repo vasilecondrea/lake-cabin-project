@@ -25,7 +25,7 @@ def lambda_handler(event, context):
     for fact_table in facts:
         df = load_table_from_name(s3, processed_bucket, fact_table)
         upload_to_OLAP(df, db_creds, fact_table)
-        
+
     print(f'[LOADING] COMPLETE -- tables_updated: {len(tables)}')
 
     #except Exception as e:

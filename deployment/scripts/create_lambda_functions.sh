@@ -35,7 +35,7 @@ echo "Creating transformation function deployment package..."
 cd ../Data_Manipulation/src/data_transformation_code/package 
 zip --q -r ../transformation.zip .
 cd ../
-zip --q transformation.zip transformation.py currency-symbols.json
+zip --q transformation.zip transformation_helper.py transformation_lambda.py transformation_retrieve.py transformation_tables.py transformation_upload.py currency-symbols.json
 cd ../../../deployment
 wait
 
@@ -46,7 +46,7 @@ wait
 echo 'Creating transformation lambda function...'
 FUNCTION=$(aws lambda create-function \
 --function-name ${TRANSFORMATION_FUNCTION_NAME} \
---runtime python3.9 --role ${IAM_ROLE} --package-type Zip --handler transformation.lambda_handler \
+--runtime python3.9 --role ${IAM_ROLE} --package-type Zip --handler transformation_lambda.lambda_handler \
 --code S3Bucket=${CODE_BUCKET_NAME},S3Key=${TRANSFORMATION_FUNCTION_NAME}/transformation.zip \
 --timeout 30)
 wait

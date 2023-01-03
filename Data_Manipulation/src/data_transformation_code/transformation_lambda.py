@@ -36,11 +36,11 @@ def lambda_handler(event, context):
         elif obj_name == 'design.csv':
             save_and_upload_data_frame_as_parquet_file(s3, processed_bucket, 'dim_design.parquet', create_dim_design(df))
         elif obj_name == 'staff.csv':
-            department_file = retrieve_csv_from_s3_bucket(s3, landing_zone_bucket, 'department.csv')
+            department_file = retrieve_csv_from_s3_bucket(s3, landing_zone_bucket, 'department.csv', retrieval_path)
             department_df = convert_csv_to_parquet_data_frame(department_file)
             save_and_upload_data_frame_as_parquet_file(s3, processed_bucket, 'dim_staff.parquet', create_dim_staff(df, department_df))
         elif obj_name == 'counterparty.csv':
-            address_file = retrieve_csv_from_s3_bucket(s3, landing_zone_bucket, 'address.csv')
+            address_file = retrieve_csv_from_s3_bucket(s3, landing_zone_bucket, 'address.csv', retrieval_path)
             address_df = convert_csv_to_parquet_data_frame(address_file)
             save_and_upload_data_frame_as_parquet_file(s3, processed_bucket, 'dim_counterparty.parquet', create_dim_counterparty(df, address_df))
         elif obj_name == 'payment.csv':

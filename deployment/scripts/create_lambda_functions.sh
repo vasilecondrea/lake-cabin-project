@@ -51,6 +51,10 @@ FUNCTION=$(aws lambda create-function \
 --timeout 30)
 wait
 
+echo "Giving permission to eventbridge rule to invoke transformation lambda function..."
+aws lambda add-permission --function-name ${TRANSFORMATION_FUNCTION_NAME} --principal events.amazonaws.com --statement-id eventbridge-invoke-${SUFFIX} --action "lambda:InvokeFunction" --source-arn ${TRANSFORMATION_RULE} >> $LOG_PATH/deployment_log_${SUFFIX}.out
+wait
+
 echo "Creating eventbridge target from template..."
 TARGET_JSON=$(jq --arg aws_id "${AWS_ACCOUNT_ID}" --arg func_name "${TRANSFORMATION_FUNCTION_NAME}" --arg ingest_bucket "${INGESTION_BUCKET_NAME}" --arg process_bucket "${PROCESSED_BUCKET_NAME}" '.Arn |= "arn:aws:lambda:us-east-1:" + $aws_id + ":function:" + $func_name | .Input = "{\"ingested_bucket\":" + "\"" + $ingest_bucket + "\"" + ", \"processed_bucket\":" + "\"" + $process_bucket + "\"" + "}"' templates/eventbridge_targets.json)
 
@@ -78,6 +82,10 @@ FUNCTION=$(aws lambda create-function \
 --runtime python3.9 --role ${IAM_ROLE} --package-type Zip --handler load.lambda_handler \
 --code S3Bucket=${CODE_BUCKET_NAME},S3Key=${LOAD_FUNCTION_NAME}/load.zip \
 --timeout 30)
+wait
+
+echo "Giving permission to eventbridge rule to invoke load lambda function..."
+aws lambda add-permission --function-name ${LOAD_FUNCTION_NAME} --principal events.amazonaws.com --statement-id eventbridge-invoke-${SUFFIX} --action "lambda:InvokeFunction" --source-arn ${LOAD_RULE} >> $LOG_PATH/deployment_log_${SUFFIX}.out
 wait
 
 echo "Creating eventbridge target from template..."

@@ -1,21 +1,21 @@
-# echo "Setting up s3 read/write policy template..."
-# S3_READ_WRITE_JSON=$(jq --arg i_bucket "arn:aws:s3:::${INGESTION_BUCKET_NAME}/*" \
-# '.Statement[0].Resource = [$i_bucket]' templates/s3_ingestion_policy_template.json |\
-# jq --arg p_bucket "arn:aws:s3:::${PROCESSED_BUCKET_NAME}/*" '.Statement[0].Resource += [$p_bucket]' | jq --arg i_buck "arn:aws:s3:::${INGESTION_BUCKET_NAME}" '.Statement[0].Resource += [$i_buck]' | jq --arg p_buck "arn:aws:s3:::${PROCESSED_BUCKET_NAME}" '.Statement[0].Resource += [$p_buck]')
+echo "Setting up s3 read/write policy template..."
+S3_READ_WRITE_JSON=$(jq --arg i_bucket "arn:aws:s3:::${INGESTION_BUCKET_NAME}/*" \
+'.Statement[0].Resource = [$i_bucket]' templates/s3_ingestion_policy_template.json |\
+jq --arg p_bucket "arn:aws:s3:::${PROCESSED_BUCKET_NAME}/*" '.Statement[0].Resource += [$p_bucket]' | jq --arg i_buck "arn:aws:s3:::${INGESTION_BUCKET_NAME}" '.Statement[0].Resource += [$i_buck]' | jq --arg p_buck "arn:aws:s3:::${PROCESSED_BUCKET_NAME}" '.Statement[0].Resource += [$p_buck]')
 
-# if [ "$S3_READ_WRITE_POLICY" == "" ] || [ "$S3_READ_WRITE_POLICY" == null ]; then
-#     echo "Creating s3 read/write policy from template..."
+if [ "$S3_READ_WRITE_POLICY" == "" ] || [ "$S3_READ_WRITE_POLICY" == null ]; then
+    echo "Creating s3 read/write policy from template..."
     
-#     S3_READ_WRITE_POLICY=$(aws iam create-policy --policy-name s3-ingestion-${SUFFIX} --policy-document "${S3_READ_WRITE_JSON}" | jq .Policy.Arn | tr -d '"')
+    S3_READ_WRITE_POLICY=$(aws iam create-policy --policy-name s3-ingestion-${SUFFIX} --policy-document "${S3_READ_WRITE_JSON}" | jq .Policy.Arn | tr -d '"')
 
-#     RESOURCES_JSON=$(cat resources.json)
-#     jq --arg policy "${S3_READ_WRITE_POLICY}" '.s3_read_write_policy |= $policy' <<< $RESOURCES_JSON > resources.json
-# else
-#     echo "S3 policy already created, skipping..."
-# fi
-# wait 
+    RESOURCES_JSON=$(cat resources.json)
+    jq --arg policy "${S3_READ_WRITE_POLICY}" '.s3_read_write_policy |= $policy' <<< $RESOURCES_JSON > resources.json
+else
+    echo "S3 policy already created, skipping..."
+fi
+wait 
 
-# aws iam attach-role-policy --policy-arn ${S3_READ_WRITE_POLICY} --role-name lambda-role-${SUFFIX}
+aws iam attach-role-policy --policy-arn ${S3_READ_WRITE_POLICY} --role-name lambda-role-${SUFFIX}
 
 
 echo "Setting up cloudwatch log policy template..."

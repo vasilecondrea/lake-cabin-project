@@ -19,7 +19,9 @@
         {
             "Effect": "Allow",
             "Action": "secretsmanager:GetSecretValue",
-            "Resource": "INSERT_SECRET_ARN_HERE"
+            "Resource": [
+                "INSERT_SECRET_ARN_HERE"
+            ]
         },
         {
             "Effect": "Allow",

@@ -11,7 +11,7 @@ def lambda_handler(event, context):
     s3 = boto3.client("s3")
     landing_zone_bucket = event['ingested_bucket']
     processed_bucket = event['processed_bucket']
-    list_objects = [s3.list_objects(Bucket=landing_zone_bucket)['Contents'][0]['Key']]
+    list_objects = [object['Key'] for object in s3.list_objects(Bucket=landing_zone_bucket)['Contents']]
 
     lookup = create_lookup_from_json('currency-symbols.json', 'abbreviation', 'currency')
 

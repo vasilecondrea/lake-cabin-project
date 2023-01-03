@@ -1,17 +1,16 @@
-import sys
-print(sys.path)
 from moto import mock_s3
 import boto3
-from src.data_transformation_code.transformation import \
-    retrieve_csv_from_s3_bucket, convert_csv_to_parquet_data_frame, create_dim_counterparty, create_dim_transaction, \
-    create_dim_payment_type, delete_cols_from_df, create_dim_currency, create_lookup_from_json, create_dim_design, \
-    create_dim_date, create_dim_location, create_dim_staff, create_fact_sales_order, create_fact_payment, \
-    create_fact_purchase_orders, save_and_upload_data_frame_as_parquet_file, split_datetime_list_to_date_and_time_list, lambda_handler
+from transformation_retrieve import retrieve_csv_from_s3_bucket, convert_csv_to_parquet_data_frame
+from transformation_upload import save_and_upload_data_frame_as_parquet_file
+from transformation_lambda import lambda_handler
+from transformation_tables import create_dim_counterparty, create_dim_transaction, create_dim_payment_type, create_dim_currency, \
+    create_dim_design, create_dim_date, create_dim_location, create_dim_staff, \
+    create_fact_sales_order, create_fact_payment, create_fact_purchase_order
+from transformation_helper import delete_cols_from_df, create_lookup_from_json, split_datetime_list_to_date_and_time_list
 import pandas as pd
 import filecmp
 from datetime import datetime
 import tempfile
-from unittest.mock import patch
 
 @mock_s3
 def test_retrieve_csv_from_s3_bucket():
@@ -72,7 +71,7 @@ def test_delete_cols_from_df():
 
 def test_create_lookup_from_json():
     
-    test_json_file = 'tests/lookup_test.json'
+    test_json_file = 'lookup_test.json'
     
     expected_lookup = {
         "ALL": "Albania Lek",
@@ -80,12 +79,9 @@ def test_create_lookup_from_json():
         "ARS": "Argentina Peso"
     }
 
-    # with patch('os.environ') as mock:
-    #     mock.return_value = "."
-    #     result = create_lookup_from_json(test_json_file, 'abbreviation', 'currency')
-    #     assert result == expected_lookup
+    path = "tests/"
 
-    result = create_lookup_from_json(test_json_file, 'abbreviation', 'currency')
+    result = create_lookup_from_json(test_json_file, 'abbreviation', 'currency', path)
     assert result == expected_lookup
 
 
@@ -222,7 +218,7 @@ def test_modify_data_for_dim_design():
     pd.testing.assert_frame_equal(result, dim_design)
 
 
-def test_modify_data_for_dim_date_for_unique_dates_on_sales_and_purchase_orders():
+def test_modify_data_for_dim_date_for_unique_dates_on_sales_and_purchase_order():
 
     sales_order_df = pd.DataFrame({
         'sales_order_id': [1, 2],
@@ -370,10 +366,10 @@ def test_modify_data_for_fact_sales_order():
 
     fact_sales_order = pd.DataFrame({
         'sales_order_id': [1, 2],
-        'created_date': ['2022-11-03', '2022-11-03'],
-        'created_time': ['14:20:52.186', '14:20:52.186'],  
-        'last_updated_date': ['2022-11-03', '2022-11-03'],
-        'last_updated_time': ['14:20:52.186', '14:20:52.186'],
+        'created_date': [datetime.strptime('2022-11-03', '%Y-%m-%d'), datetime.strptime('2022-11-03', '%Y-%m-%d')],
+        'created_time': [datetime.strptime('14:20:52.186', '%H:%M:%S.%f'), datetime.strptime('14:20:52.186', '%H:%M:%S.%f')],  
+        'last_updated_date': [datetime.strptime('2022-11-03', '%Y-%m-%d'), datetime.strptime('2022-11-03', '%Y-%m-%d')],
+        'last_updated_time': [datetime.strptime('14:20:52.186', '%H:%M:%S.%f'), datetime.strptime('14:20:52.186', '%H:%M:%S.%f')],
         'sales_staff_id': [16, 19],
         'counterparty_id': [18, 8],
         'currency_id': [3, 2],
@@ -406,10 +402,10 @@ def test_modify_data_for_fact_payment():
 
     fact_payment = pd.DataFrame({
         'payment_id': [2, 3],
-        'created_date': ['2022-11-03', '2022-11-03'],
-        'created_time': ['14:20:52.187', '14:20:52.186'],  
-        'last_updated_date': ['2022-11-03', '2022-11-03'],
-        'last_updated_time': ['14:20:52.187', '14:20:52.186'],
+        'created_date': [datetime.strptime('2022-11-03', '%Y-%m-%d'), datetime.strptime('2022-11-03', '%Y-%m-%d')],
+        'created_time': [datetime.strptime('14:20:52.187', '%H:%M:%S.%f'), datetime.strptime('14:20:52.186', '%H:%M:%S.%f')],  
+        'last_updated_date': [datetime.strptime('2022-11-03', '%Y-%m-%d'), datetime.strptime('2022-11-03', '%Y-%m-%d')],
+        'last_updated_time': [datetime.strptime('14:20:52.187', '%H:%M:%S.%f'), datetime.strptime('14:20:52.186', '%H:%M:%S.%f')],
         'transaction_id': [2, 3],
         'counterparty_id': [15, 18],
         'payment_amount': [552548.62, 205952.22],
@@ -424,7 +420,7 @@ def test_modify_data_for_fact_payment():
     pd.testing.assert_frame_equal(result, fact_payment)
 
 
-def test_modify_data_for_fact_purchase_orders():
+def test_modify_data_for_fact_purchase_order():
     purchase_df = pd.DataFrame({
         'purchase_order_id': [1, 2],
         'created_at': ['2022-11-03 14:20:52.187', '2022-11-03 14:20:52.186'],
@@ -440,26 +436,26 @@ def test_modify_data_for_fact_purchase_orders():
         'agreed_delivery_location_id': [6, 8]
     })
 
-    fact_purchase_orders = pd.DataFrame({
+    fact_purchase_order = pd.DataFrame({
         'purchase_order_id': [1, 2],
-        'created_date': ['2022-11-03', '2022-11-03'],
-        'created_time': ['14:20:52.187', '14:20:52.186'],  
-        'last_updated_date': ['2022-11-03', '2022-11-03'],
-        'last_updated_time': ['14:20:52.187', '14:20:52.186'],
+        'created_date': [datetime.strptime('2022-11-03', '%Y-%m-%d'), datetime.strptime('2022-11-03', '%Y-%m-%d')],
+        'created_time': [datetime.strptime('14:20:52.187', '%H:%M:%S.%f'), datetime.strptime('14:20:52.186', '%H:%M:%S.%f')],
+        'last_updated_date': [datetime.strptime('2022-11-03', '%Y-%m-%d'), datetime.strptime('2022-11-03', '%Y-%m-%d')],
+        'last_updated_time': [datetime.strptime('14:20:52.187', '%H:%M:%S.%f'), datetime.strptime('14:20:52.186', '%H:%M:%S.%f')],
         'staff_id': [12, 20],
         'counterparty_id': [11, 17],
         'item_code': ['ZDOI5EA', 'QLZLEXR'],
         'item_quantity': [371, 286],
         'item_unit_price': [361.39, 199.04],
         'currency_id': [2, 2],
-        'agreed_delivery_date': ['2022-11-09', '2022-11-04'],
-        'agreed_payment_date': ['2022-11-07', '2022-11-07'],
+        'agreed_delivery_date': [datetime.strptime('2022-11-09', '%Y-%m-%d'), datetime.strptime('2022-11-04', '%Y-%m-%d')],
+        'agreed_payment_date': [datetime.strptime('2022-11-07', '%Y-%m-%d'), datetime.strptime('2022-11-07', '%Y-%m-%d')],
         'agreed_delivery_location_id': [6, 8]
     })
 
-    result = create_fact_purchase_orders(purchase_df)
+    result = create_fact_purchase_order(purchase_df)
 
-    pd.testing.assert_frame_equal(result, fact_purchase_orders)
+    pd.testing.assert_frame_equal(result, fact_purchase_order)
 
 @mock_s3
 def test_save_and_upload_data_frame_as_parquet_file():
@@ -488,11 +484,11 @@ def test_save_and_upload_data_frame_as_parquet_file():
 
 
 def test_split_datetime_to_date_and_time():
-    datetime = ['2022-11-03 14:20:49.962']
-    expected_date = ['2022-11-03']
-    expected_time = ['14:20:49.962']
+    date_time = ['2022-11-03 14:20:49.962']
+    expected_date = [datetime.strptime('2022-11-03', '%Y-%m-%d')]
+    expected_time = [datetime.strptime('14:20:49.962', '%H:%M:%S.%f')]
 
-    result = split_datetime_list_to_date_and_time_list(datetime)
+    result = split_datetime_list_to_date_and_time_list(date_time)
 
     assert result['dates'] == expected_date
     assert result['times'] == expected_time

@@ -1,21 +1,23 @@
 # INGESTION LAMBDA FUNCTION
 echo "Creating ingestion deployment package..."
-cd src/ingestion-folder/package
-zip --q -r ../../../test-ingestion.zip .
+cd ../extract/src/package
+zip --q -r ../extract.zip .
 cd ../
-zip --q ../../test-ingestion.zip function.py
-cd ../../
+zip --q extract.zip extract.py
+cd ../../deployment
 wait
 
 echo "Uploading ingestion deployment package..."
-aws s3 cp test-ingestion.zip s3://${CODE_BUCKET_NAME}/${FUNCTION_NAME}/test-ingestion.zip >> $LOG_PATH/deployment_log_${SUFFIX}.out
+aws s3 cp ../extract/src/extract.zip s3://${CODE_BUCKET_NAME}/${FUNCTION_NAME}/extract.zip >> $LOG_PATH/deployment_log_${SUFFIX}.out
 wait
+
+rm ../extract/src/extract.zip
 
 echo 'Creating ingestion lambda function...'
 FUNCTION=$(aws lambda create-function \
 --function-name ${FUNCTION_NAME} \
---runtime python3.9 --role ${IAM_ROLE} --package-type Zip --handler function.lambda_handler \
---code S3Bucket=${CODE_BUCKET_NAME},S3Key=${FUNCTION_NAME}/test-ingestion.zip \
+--runtime python3.9 --role ${IAM_ROLE} --package-type Zip --handler extract.lambda_handler \
+--code S3Bucket=${CODE_BUCKET_NAME},S3Key=${FUNCTION_NAME}/extract.zip \
 --timeout 30)
 wait
 
@@ -32,22 +34,24 @@ wait
 
 # TRANSFORMATION LAMBDA FUNCTION
 echo "Creating transformation function deployment package..."
-cd ../transformation/src/data_transformation_code/package 
-zip --q -r ../transformation.zip .
+cd ../transform/src/package 
+zip --q -r ../transform.zip .
 cd ../
-zip --q transformation.zip transformation_helper.py transformation_lambda.py transformation_retrieve.py transformation_tables.py transformation_upload.py currency-symbols.json
-cd ../../../deployment
+zip --q transform.zip transform_helper.py transform.py transform_retrieve.py transform_tables.py transform_upload.py currency-symbols.json
+cd ../../deployment
 wait
 
 echo "Uploading transformation deployment package..."
-aws s3 cp ../transformation/src/data_transformation_code/transformation.zip s3://${CODE_BUCKET_NAME}/${TRANSFORMATION_FUNCTION_NAME}/transformation.zip >> $LOG_PATH/deployment_log_${SUFFIX}.out
+aws s3 cp ../transform/src/transform.zip s3://${CODE_BUCKET_NAME}/${TRANSFORMATION_FUNCTION_NAME}/transform.zip >> $LOG_PATH/deployment_log_${SUFFIX}.out
 wait
+
+rm ../transform/src/transform.zip
 
 echo 'Creating transformation lambda function...'
 FUNCTION=$(aws lambda create-function \
 --function-name ${TRANSFORMATION_FUNCTION_NAME} \
---runtime python3.9 --role ${IAM_ROLE} --package-type Zip --handler transformation_lambda.lambda_handler \
---code S3Bucket=${CODE_BUCKET_NAME},S3Key=${TRANSFORMATION_FUNCTION_NAME}/transformation.zip \
+--runtime python3.9 --role ${IAM_ROLE} --package-type Zip --handler transform.lambda_handler \
+--code S3Bucket=${CODE_BUCKET_NAME},S3Key=${TRANSFORMATION_FUNCTION_NAME}/transform.zip \
 --timeout 30)
 wait
 
@@ -64,17 +68,18 @@ wait
 
 # LOAD LAMBDA FUNCTION
 echo "Creating load function deployment package..."
-mkdir -p ../load/package
-cd ../load/package
+cd ../load/src/package
 zip --q -r ../load.zip .
 cd ../
 zip --q load.zip load.py
-cd ../deployment
+cd ../../deployment
 wait
 
 echo "Uploading load deployment package..."
-aws s3 cp ../load/load.zip s3://${CODE_BUCKET_NAME}/${LOAD_FUNCTION_NAME}/load.zip >> $LOG_PATH/deployment_log_${SUFFIX}.out
+aws s3 cp ../load/src/load.zip s3://${CODE_BUCKET_NAME}/${LOAD_FUNCTION_NAME}/load.zip >> $LOG_PATH/deployment_log_${SUFFIX}.out
 wait
+
+rm ../load/src/load.zip
 
 echo 'Creating load lambda function...'
 FUNCTION=$(aws lambda create-function \

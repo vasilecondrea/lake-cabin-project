@@ -8,7 +8,7 @@ def delete_cols_from_df(df, col_list):
     return df
 
 
-def create_lookup_from_json(json_file, key, value, path="tests/"):
+def create_lookup_from_json(json_file, key, value, path="test/"):
     configPath = path + json_file
 
     with open(configPath) as f:

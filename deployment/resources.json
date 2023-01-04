@@ -1,11 +1,1 @@
-{
-  "resource_suffix": "030126",
-  "source_db_creds": "arn:aws:secretsmanager:us-east-1:795469750311:secret:db-creds-source-YzIGPt",
-  "destination_db_creds": "arn:aws:secretsmanager:us-east-1:795469750311:secret:db-creds-destination-GhAP3X",
-  "iam_role": "arn:aws:iam::795469750311:role/lambda-role-030126",
-  "s3_read_write_policy": "arn:aws:iam::795469750311:policy/s3-ingestion-030126",
-  "cloudwatch_log_policy": "arn:aws:iam::795469750311:policy/cloudwatch-ingestion-030126",
-  "ingestion_rule": "arn:aws:events:us-east-1:795469750311:rule/ingestion-rule-030126",
-  "transformation_rule": "arn:aws:events:us-east-1:795469750311:rule/transformation-rule-030126",
-  "load_rule": "arn:aws:events:us-east-1:795469750311:rule/load-rule-030126"
-}
+{}

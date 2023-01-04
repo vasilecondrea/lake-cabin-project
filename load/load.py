@@ -5,9 +5,10 @@ import json
 import sqlalchemy
 from sqlalchemy import create_engine
 
+
 def lambda_handler(event, context):
 
-    #try:
+    # try:
     print('[LOADING] STARTED')
     s3 = boto3.client("s3")
     sm = boto3.client("secretsmanager")
@@ -28,8 +29,8 @@ def lambda_handler(event, context):
 
     print(f'[LOADING] COMPLETE -- tables_updated: {len(tables)}')
 
-    #except Exception as e:
-        #print(f'[LOADING] ERROR: {e}')
+    # except Exception as e:
+    # print(f'[LOADING] ERROR: {e}')
 
 
 def list_tables(s3, processed_bucket):
@@ -42,7 +43,7 @@ def list_tables(s3, processed_bucket):
 
         response = s3.list_objects_v2(Bucket=processed_bucket)
         tables = []
-        
+
         if 'Contents' in response:
             tables = [table["Key"] for table in response["Contents"]]
         else:
@@ -74,7 +75,8 @@ def get_db_credentials(secretsmanager):
         if not isinstance(secretsmanager, botocore.client.BaseClient):
             raise (ValueError)
 
-        response = secretsmanager.get_secret_value(SecretId='db-creds-destination')
+        response = secretsmanager.get_secret_value(
+            SecretId='db-creds-destination')
 
         creds_json = json.loads(response['SecretString'])
         print(creds_json)
@@ -98,8 +100,9 @@ def upload_to_OLAP(dataframe, db_credentials, table_name):
         engine = sqlalchemy.create_engine(db_url)
         conn = engine.connect()
 
-        conn.execute(f"DELETE FROM {table};")
-        
+        conn.execute(
+            f"DELETE FROM {table}; GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO project_team_4;")
+
         dataframe.to_sql(table, conn, if_exists='append', index=False)
 
         print(f"[LOADING] Updated table '{table}'...")
@@ -107,4 +110,5 @@ def upload_to_OLAP(dataframe, db_credentials, table_name):
         print("ERROR: Failed upload_to_olap: " + str(e))
 
 
-lambda_handler({"ingested_bucket": "ingestion-bucket-030125", "processed_bucket": "processed-bucket-030125"}, {})
+lambda_handler({"ingested_bucket": "ingestion-bucket-030125",
+               "processed_bucket": "processed-bucket-030125"}, {})

@@ -32,7 +32,7 @@ wait
 
 # TRANSFORMATION LAMBDA FUNCTION
 echo "Creating transformation function deployment package..."
-cd ../Data_Manipulation/src/data_transformation_code/package 
+cd ../transformation/src/data_transformation_code/package 
 zip --q -r ../transformation.zip .
 cd ../
 zip --q transformation.zip transformation_helper.py transformation_lambda.py transformation_retrieve.py transformation_tables.py transformation_upload.py currency-symbols.json
@@ -40,7 +40,7 @@ cd ../../../deployment
 wait
 
 echo "Uploading transformation deployment package..."
-aws s3 cp ../Data_Manipulation/src/data_transformation_code/transformation.zip s3://${CODE_BUCKET_NAME}/${TRANSFORMATION_FUNCTION_NAME}/transformation.zip >> $LOG_PATH/deployment_log_${SUFFIX}.out
+aws s3 cp ../transformation/src/data_transformation_code/transformation.zip s3://${CODE_BUCKET_NAME}/${TRANSFORMATION_FUNCTION_NAME}/transformation.zip >> $LOG_PATH/deployment_log_${SUFFIX}.out
 wait
 
 echo 'Creating transformation lambda function...'
@@ -64,8 +64,8 @@ wait
 
 # LOAD LAMBDA FUNCTION
 echo "Creating load function deployment package..."
-mkdir -p ../OLAP_load/package
-cd ../OLAP_load/package
+mkdir -p ../load/package
+cd ../load/package
 zip --q -r ../load.zip .
 cd ../
 zip --q load.zip load.py
@@ -73,7 +73,7 @@ cd ../deployment
 wait
 
 echo "Uploading load deployment package..."
-aws s3 cp ../OLAP_load/load.zip s3://${CODE_BUCKET_NAME}/${LOAD_FUNCTION_NAME}/load.zip >> $LOG_PATH/deployment_log_${SUFFIX}.out
+aws s3 cp ../load/load.zip s3://${CODE_BUCKET_NAME}/${LOAD_FUNCTION_NAME}/load.zip >> $LOG_PATH/deployment_log_${SUFFIX}.out
 wait
 
 echo 'Creating load lambda function...'

@@ -45,13 +45,13 @@ def lambda_handler(event, context):
             save_and_upload_data_frame_as_parquet_file(s3, processed_bucket, 'dim_counterparty.parquet', create_dim_counterparty(df, address_df))
         elif obj_name == 'payment.csv':
             save_and_upload_data_frame_as_parquet_file(s3, processed_bucket, 'fact_payment.parquet', create_fact_payment(df))
-            save_and_upload_data_frame_as_parquet_file(s3, processed_bucket, 'dim_date_payment.parquet', create_dim_date(df))
+            #save_and_upload_data_frame_as_parquet_file(s3, processed_bucket, 'dim_date_payment.parquet', create_dim_date(df))
         elif obj_name == 'sales_order.csv':
             save_and_upload_data_frame_as_parquet_file(s3, processed_bucket, 'fact_sales_order.parquet', create_fact_sales_order(df))
-            save_and_upload_data_frame_as_parquet_file(s3, processed_bucket, 'dim_date_sales_order.parquet', create_dim_date(df))
+            #save_and_upload_data_frame_as_parquet_file(s3, processed_bucket, 'dim_date_sales_order.parquet', create_dim_date(df))
         elif obj_name == 'purchase_order.csv':
             save_and_upload_data_frame_as_parquet_file(s3, processed_bucket, 'fact_purchase_order.parquet', create_fact_purchase_order(df))
-            save_and_upload_data_frame_as_parquet_file(s3, processed_bucket, 'dim_date_purchase_order.parquet', create_dim_date(df))
+            save_and_upload_data_frame_as_parquet_file(s3, processed_bucket, 'dim_date.parquet', create_dim_date(df))
         elif obj_name == 'address.csv':
             save_and_upload_data_frame_as_parquet_file(s3, processed_bucket, 'dim_location.parquet', create_dim_location(df))
 

@@ -107,4 +107,4 @@ def upload_to_OLAP(dataframe, db_credentials, table_name):
         print("ERROR: Failed upload_to_olap: " + str(e))
 
 
-lambda_handler({"ingested_bucket": "ingestion-bucket-030123-1", "processed_bucket": "processed-bucket-030123-1"}, {})
+lambda_handler({"ingested_bucket": "ingestion-bucket-030125", "processed_bucket": "processed-bucket-030125"}, {})

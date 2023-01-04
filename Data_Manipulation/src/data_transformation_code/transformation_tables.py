@@ -25,6 +25,7 @@ def create_dim_counterparty(counterparty_df, address_df):
 def create_dim_transaction(transaction_df):
     dim_transaction_df = transaction_df.copy()
 
+    dim_transaction_df['sales_order_id'] = [int(sales_order_id) if sales_order_id != 'None' else None for sales_order_id in dim_transaction_df['sales_order_id']]
     cols_to_delete = ['created_at', 'last_updated']
     dim_transaction_df = delete_cols_from_df(dim_transaction_df, cols_to_delete)
 
@@ -151,18 +152,21 @@ def create_dim_staff(staff_df, department_df):
 def create_fact_sales_order(sales_order_df):
     fact_sales_order = sales_order_df.copy()
 
+    fact_sales_order['sales_order_id'] = [int(sales_order_id) if sales_order_id != 'None' else None for sales_order_id in fact_sales_order['sales_order_id']]
     fact_sales_order['created_date'] = split_datetime_list_to_date_and_time_list(fact_sales_order['created_at'])['dates']
     fact_sales_order['created_time'] = split_datetime_list_to_date_and_time_list(fact_sales_order['created_at'])['times']
     fact_sales_order['last_updated_date'] = split_datetime_list_to_date_and_time_list(fact_sales_order['last_updated'])['dates']
     fact_sales_order['last_updated_time'] = split_datetime_list_to_date_and_time_list(fact_sales_order['last_updated'])['times'] 
+    fact_sales_order['agreed_delivery_date'] = [datetime.strptime(date, '%Y-%m-%d') for date in fact_sales_order['agreed_delivery_date']]
+    fact_sales_order['agreed_payment_date'] = [datetime.strptime(date, '%Y-%m-%d') for date in fact_sales_order['agreed_payment_date']]
 
-    cols_to_delete = ['units_sold', 'unit_price', 'created_at', 'last_updated']
+    cols_to_delete = ['created_at', 'last_updated']
     fact_sales_order = delete_cols_from_df(fact_sales_order, cols_to_delete)
 
     fact_sales_order = fact_sales_order.rename(columns={'staff_id':'sales_staff_id'})
 
     return fact_sales_order[['sales_order_id', 'created_date', 'created_time', 'last_updated_date', 'last_updated_time', 'sales_staff_id', \
-        'counterparty_id', 'currency_id', 'design_id', 'agreed_delivery_date', 'agreed_payment_date', 'agreed_delivery_location_id']]
+        'counterparty_id', 'units_sold', 'unit_price', 'currency_id', 'design_id', 'agreed_delivery_date', 'agreed_payment_date', 'agreed_delivery_location_id']]
 
 
 def create_fact_payment(payment_df):
@@ -172,6 +176,7 @@ def create_fact_payment(payment_df):
     fact_payment['created_time'] = split_datetime_list_to_date_and_time_list(fact_payment['created_at'])['times']
     fact_payment['last_updated_date'] = split_datetime_list_to_date_and_time_list(fact_payment['last_updated'])['dates']
     fact_payment['last_updated_time'] = split_datetime_list_to_date_and_time_list(fact_payment['last_updated'])['times']
+    fact_payment['payment_date'] = [datetime.strptime(date, '%Y-%m-%d') for date in fact_payment['payment_date']]
     
     cols_to_delete = ['created_at', 'last_updated', 'company_ac_number', 'counterparty_ac_number']
     fact_payment = delete_cols_from_df(fact_payment, cols_to_delete)

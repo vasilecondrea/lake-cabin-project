@@ -8,29 +8,29 @@ from sqlalchemy import create_engine
 
 def lambda_handler(event, context):
 
-    # try:
-    print('[LOADING] STARTED')
-    s3 = boto3.client("s3")
-    sm = boto3.client("secretsmanager")
+    try:
+        print('[LOADING] STARTED')
+        s3 = boto3.client("s3")
+        sm = boto3.client("secretsmanager")
 
-    processed_bucket = event["processed_bucket"]
-    db_creds = get_db_credentials(sm)
-    tables = list_tables(s3, processed_bucket)
-    dims = [dim for dim in tables if 'dim' in dim]
-    facts = [fact for fact in tables if "fact" in fact]
+        processed_bucket = event["processed_bucket"]
+        db_creds = get_db_credentials(sm)
+        tables = list_tables(s3, processed_bucket)
+        dims = [dim for dim in tables if 'dim' in dim]
+        facts = [fact for fact in tables if "fact" in fact]
 
-    for dim_table in dims:
-        df = load_table_from_name(s3, processed_bucket, dim_table)
-        upload_to_OLAP(df, db_creds, dim_table)
+        for dim_table in dims:
+            df = load_table_from_name(s3, processed_bucket, dim_table)
+            upload_to_OLAP(df, db_creds, dim_table)
 
-    for fact_table in facts:
-        df = load_table_from_name(s3, processed_bucket, fact_table)
-        upload_to_OLAP(df, db_creds, fact_table)
+        for fact_table in facts:
+            df = load_table_from_name(s3, processed_bucket, fact_table)
+            upload_to_OLAP(df, db_creds, fact_table)
 
-    print(f'[LOADING] COMPLETE -- tables_updated: {len(tables)}')
+        print(f'[LOADING] COMPLETE -- tables_updated: {len(tables)}')
 
-    # except Exception as e:
-    # print(f'[LOADING] ERROR: {e}')
+    except Exception as e:
+        print(f'ERROR: Failed lambda_handler' + str(e))
 
 
 def list_tables(s3, processed_bucket):

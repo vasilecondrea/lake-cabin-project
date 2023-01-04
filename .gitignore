@@ -17,4 +17,6 @@ coverage.xml
 deployment/db_creds_destination.json
 deployment/db_creds_source.json
 
-OLAP_load/package
+extract/src/package/*
+load/src/package/*
+transform/src/package/*

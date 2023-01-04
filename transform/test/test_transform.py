@@ -1,12 +1,12 @@
 from moto import mock_s3
 import boto3
-from transformation_retrieve import retrieve_csv_from_s3_bucket, convert_csv_to_parquet_data_frame
-from transformation_upload import save_and_upload_data_frame_as_parquet_file
-from transformation_lambda import lambda_handler
-from transformation_tables import create_dim_counterparty, create_dim_transaction, create_dim_payment_type, create_dim_currency, \
+from transform_retrieve import retrieve_csv_from_s3_bucket, convert_csv_to_parquet_data_frame
+from transform_upload import save_and_upload_data_frame_as_parquet_file
+from transform import lambda_handler
+from transform_tables import create_dim_counterparty, create_dim_transaction, create_dim_payment_type, create_dim_currency, \
     create_dim_design, create_dim_date, create_dim_location, create_dim_staff, \
     create_fact_sales_order, create_fact_payment, create_fact_purchase_order
-from transformation_helper import delete_cols_from_df, create_lookup_from_json, split_datetime_list_to_date_and_time_list
+from transform_helper import delete_cols_from_df, create_lookup_from_json, split_datetime_list_to_date_and_time_list
 import pandas as pd
 import filecmp
 from datetime import datetime
@@ -15,7 +15,7 @@ import tempfile
 @mock_s3
 def test_retrieve_csv_from_s3_bucket():
 
-    file = "test_csv.csv"
+    file = "test/test_csv.csv"
     key = "test_csv.csv"
     bucket = "test_bucket"
 
@@ -30,7 +30,7 @@ def test_retrieve_csv_from_s3_bucket():
 
 def test_convert_csv_to_parquet_data_frame():
     
-    file = 'tests/test_csv.csv'
+    file = 'test/test_csv.csv'
     
     df = pd.DataFrame({
         'sales_order_id': [1, 2],
@@ -79,7 +79,7 @@ def test_create_lookup_from_json():
         "ARS": "Argentina Peso"
     }
 
-    path = "tests/"
+    path = "test/"
 
     result = create_lookup_from_json(test_json_file, 'abbreviation', 'currency', path)
     assert result == expected_lookup
@@ -132,7 +132,7 @@ def test_modify_data_for_dim_transaction_table():
     transaction_df = pd.DataFrame({
         'transaction_id': [1, 2],
         'transaction_type': ['PURCHASE', 'PURCHASE'],
-        'sales_order_id': [None, None],
+        'sales_order_id': ['None', 'None'],
         'purchase_order_id': [2, 3],
         'created_at': ['2022-11-03 14:20:52.186', '2022-11-03 14:20:52.187'],
         'last_updated': ['2022-11-03 14:20:52.186', '2022-11-03 14:20:52.187']
@@ -372,14 +372,17 @@ def test_modify_data_for_fact_sales_order():
         'last_updated_time': [datetime.strptime('14:20:52.186', '%H:%M:%S.%f'), datetime.strptime('14:20:52.186', '%H:%M:%S.%f')],
         'sales_staff_id': [16, 19],
         'counterparty_id': [18, 8],
+        'units_sold': [84754, 42972],
+        'unit_price': [2.43, 3.94],
         'currency_id': [3, 2],
         'design_id': [9, 3],
-        'agreed_delivery_date': ['2022-11-10', '2022-11-07'],
-        'agreed_payment_date': ['2022-11-03', '2022-11-08'],
+        'agreed_delivery_date': [datetime.strptime('2022-11-10', '%Y-%m-%d'), datetime.strptime('2022-11-07', '%Y-%m-%d')],
+        'agreed_payment_date': [datetime.strptime('2022-11-03', '%Y-%m-%d'), datetime.strptime('2022-11-08', '%Y-%m-%d')],
         'agreed_delivery_location_id': [4, 8]
     })
     
     result = create_fact_sales_order(sales_order_df)
+    print(result, fact_sales_order)
 
     pd.testing.assert_frame_equal(result, fact_sales_order)
 
@@ -412,7 +415,7 @@ def test_modify_data_for_fact_payment():
         'currency_id': [2, 3],
         'payment_type_id': [3, 1],
         'paid': [False, False],
-        'payment_date': ['2022-11-04', '2022-11-03']
+        'payment_date': [datetime.strptime('2022-11-04', '%Y-%m-%d'), datetime.strptime('2022-11-03', '%Y-%m-%d')]
     })
 
     result = create_fact_payment(payment_df)
@@ -499,8 +502,8 @@ def test_lambda_handler():
 
     ingested_bucket = 'ingested-data-bucket-1'
     processed_bucket = 'processed-data-bucket-1'
-    payment_file = "tests/payment_type.csv"
-    currency_file = "tests/currency.csv"
+    payment_file = "test/payment_type.csv"
+    currency_file = "test/currency.csv"
 
     s3 = boto3.client("s3")
     s3.create_bucket(Bucket=ingested_bucket)

@@ -8,10 +8,11 @@ The project requires the use of Python, SQL, database modeling, AWS, and agile w
 
 The project includes the following components:
 
-Two S3 buckets: one for ingested data and one for processed data, both structured and organized for easy data access.
-A Python application that loads the data into a prepared data warehouse at defined intervals. The application has been adequately logged and monitored.
-A Python application that remodels the data into a predefined schema for a data warehouse and stores the data in parquet format in the "processed" S3 bucket.
-A Python application that loads the data into a prepared data warehouse at defined intervals.
+- Two S3 buckets: one for ingested data and one for processed data, both structured and organized for easy data access.
+- A Python application that loads the data into a prepared data warehouse at defined intervals. The application has been adequately logged and monitored.
+- A Python application that remodels the data into a predefined schema for a data warehouse and stores the data in parquet format in the "processed" S3 bucket.
+- A Python application that loads the data into a prepared data warehouse at defined intervals.
+
 All of the Python code has been tested, and as much of the project as possible has been deployed automatically using CI/CD techniques.
 
 ## DEPENDENCY REQUIREMENTS
